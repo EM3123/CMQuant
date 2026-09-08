@@ -12,6 +12,9 @@ export default function Home() {
       <nav className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
         <span className="text-sm font-medium tracking-tight">CMQuant</span>
         <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
+          <Link href="/daily" className="text-rare transition-colors hover:text-primary">
+            Daily
+          </Link>
           <Link href="/comp" className="transition-colors hover:text-primary">
             Comp
           </Link>

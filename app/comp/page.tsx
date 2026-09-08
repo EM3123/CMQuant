@@ -71,12 +71,14 @@ export default function CompPage() {
           </Link>
           <Label>Comp / Computational Thinking</Label>
         </div>
-        <Link
-          href="/poker"
-          className="text-[10px] uppercase tracking-[0.18em] text-secondary transition-colors hover:text-primary"
-        >
-          Poker Lab
-        </Link>
+        <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
+          <Link href="/daily" className="text-rare transition-colors hover:text-primary">
+            Daily
+          </Link>
+          <Link href="/poker" className="transition-colors hover:text-primary">
+            Poker Lab
+          </Link>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">

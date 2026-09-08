@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
 
 /**
  * This is the marketing budget.
@@ -47,6 +48,22 @@ export function ResultsCard({
 }) {
   const [copied, setCopied] = useState(false);
   const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
+
+  // Every game ends here, so this is the one place that has to know a run
+  // finished. If the seed is today's daily seed, the result is recorded - and
+  // only the first result of the day is kept.
+  useEffect(() => {
+    const dayKey = todayKey();
+    if (seed !== dailySeed(dayKey)) return;
+    writeDailyResult({
+      dayKey,
+      game: gameName,
+      points,
+      correct,
+      attempted,
+      bestStreak,
+    });
+  }, [seed, gameName, points, correct, attempted, bestStreak]);
 
   async function copyChallenge() {
     const url = `${window.location.origin}${challengePath}?seed=${encodeURIComponent(

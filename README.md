@@ -138,11 +138,30 @@ layer, persistence and `ChoiceRun`. The other owns `lib/games/*` and
 `scripts/verify-*`, which are pure functions testable in isolation and mergeable
 without conflict.
 
+## The daily
+
+`/daily` serves one puzzle a day, one attempt. Which game you get rotates by
+date and both the rotation and the seed are computed from the date rather than
+looked up, so the page works for any date without a server. That is also what
+makes the archive cheap when the subscription arrives: it is the same function
+pointed at yesterday.
+
+The day rolls over at UTC midnight, deliberately. Local midnight would put a
+player in Pittsburgh and a player in Tokyo on different puzzles while sharing
+one leaderboard.
+
+Results are recorded in `ResultsCard`, because every game ends there and it is
+the only place that has to know a run finished. One attempt is enforced in
+`localStorage` and nowhere else, so anyone can clear their own storage and
+replay. That is fine while the board is unranked and labelled as such; it stops
+being fine the day scores start meaning something, which is when generation and
+validation have to move to a server.
+
 ## Where this is going
 
-Six games are live. Next is the daily challenge (one seed per day, one attempt),
-then the campus leaderboard gated on `@andrew.cmu.edu`, then Outs — which needs
-a seven-card hand evaluator pulled off npm rather than written by hand.
+Six games are live and the daily is running. Next is the campus leaderboard
+gated on `@andrew.cmu.edu`, then Outs — which needs a seven-card hand evaluator
+pulled off npm rather than written by hand.
 
 The moment a subscription launches, this stops being a personal project under
 Vercel's fair-use terms and has to move to a paid plan.
