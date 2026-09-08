@@ -10,7 +10,9 @@
     "verify:equalize": "tsx scripts/verify-equalize.ts",
     "verify:potodds": "tsx scripts/verify-potodds.ts",
     "verify:flash": "tsx scripts/verify-flash.ts",
-    "verify": "npm run verify:equalize && npm run verify:potodds && npm run verify:flash"
+    "verify": "npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:potodds",
+    "verify:approx": "tsx scripts/verify-approx.ts",
+    "verify:doomsday": "tsx scripts/verify-doomsday.ts"
   },
   "dependencies": {
     "next": "16.3.4",

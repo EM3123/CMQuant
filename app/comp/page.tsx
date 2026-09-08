@@ -30,10 +30,18 @@ const DRILLS = [
   {
     id: "APX",
     name: "Approx",
-    skill: "Estimation and order-of-magnitude judgement",
-    href: null,
-    storageKey: null,
-    status: "PHASE 2",
+    skill: "Estimation, when precision is wasted effort",
+    href: "/g/approx",
+    storageKey: "cmquant:approx:best",
+    status: "LIVE",
+  },
+  {
+    id: "DMD",
+    name: "Doomsday",
+    skill: "Name the weekday for any date",
+    href: "/g/doomsday",
+    storageKey: "cmquant:doomsday:best",
+    status: "LIVE",
   },
   {
     id: "DST",
@@ -75,14 +83,14 @@ export default function CompPage() {
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
           <h1 className="text-3xl font-medium tracking-tight">Computational Thinking</h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
-            Mental calculation, estimation, statistics and pattern recognition.
-            Every drill is sixty seconds, procedurally generated, and identical
-            for anyone holding the same seed.
+            Mental calculation, estimation and pattern recognition. Every drill
+            runs for sixty seconds and comes out of a seed, so anyone holding that
+            seed gets the questions you got, in the order you got them.
           </p>
 
           <div className="mt-10 flex items-center justify-between border-b border-hairline pb-1.5">
             <Label>Drill index</Label>
-            <Label>2 live</Label>
+            <Label>4 live</Label>
           </div>
 
           {/* A grid rather than a table, because every live row has to be a

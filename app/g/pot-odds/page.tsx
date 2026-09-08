@@ -21,7 +21,7 @@ export default function PotOddsPage() {
         <PotOddsGame />
 
         <footer className="shrink-0 px-5 py-3 text-center text-[10px] leading-relaxed text-muted">
-          Simulated cards only. No wagering, no prizes, no currency of any kind.
+          Simulated cards only. Nothing can be wagered here and nothing can be cashed out.
         </footer>
       </div>
     </Wing>

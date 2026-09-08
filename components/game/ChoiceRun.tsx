@@ -1,12 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import {
-  questionAt,
-  score,
-  ROUND_MS,
-  SKIP_PENALTY_MS,
-} from "@/lib/games/flash";
+import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
@@ -17,13 +11,53 @@ import {
   finalScore,
 } from "@/lib/scoring";
 
+/**
+ * The shared runtime for any game that asks a question and offers numbered
+ * choices.
+ *
+ * The spec says to build two games hardcoded and extract the engine from them.
+ * Five was the point where the fifth copy of the same reducer, timer, keyboard
+ * handler and results branch stopped being cheaper than the abstraction.
+ *
+ * The runtime owns the clock, the streak, the scoring, persistence and the
+ * results screen. A game supplies its questions and how to draw them, and
+ * nothing else.
+ */
+export type ChoiceGame<Q> = {
+  name: string;
+  /** localStorage key for this game's personal best. */
+  storageKey: string;
+  /** Route a challenge link should open. */
+  challengePath: string;
+  roundMs: number;
+  wrongPenaltyMs: number;
+  questionAt(seed: string, index: number): Q;
+  optionCount(question: Q): number;
+  validate(question: Q, chosen: number): boolean;
+  score(question: Q, msElapsed: number, streak: number): number;
+  difficultyOf(question: Q): number;
+  renderPrompt(question: Q): ReactNode;
+  renderOption(question: Q, index: number): ReactNode;
+  /** Grid classes for the option row. */
+  optionsClassName: string;
+  intro: {
+    eyebrow: string;
+    title: string;
+    blurb: string;
+    startLabel: string;
+    hint: string;
+    /** Optional flourish above the title, e.g. a hand of cards. */
+    ornament?: ReactNode;
+    titleClassName?: string;
+  };
+};
+
 type Phase = "idle" | "running" | "done";
 
 type RunState = {
   phase: Phase;
   seed: string;
   index: number;
-  typed: string;
   correct: number;
   attempted: number;
   streak: number;
@@ -38,7 +72,6 @@ const EMPTY: RunState = {
   phase: "idle",
   seed: "",
   index: 0,
-  typed: "",
   correct: 0,
   attempted: 0,
   streak: 0,
@@ -51,82 +84,62 @@ const EMPTY: RunState = {
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "digit"; digit: string; now: number }
-  | { type: "backspace" }
-  | { type: "skip"; now: number }
+  | { type: "answer"; chosen: number; now: number }
   | { type: "finish" };
 
-/** Close the current question, right or wrong, and move to the next one. */
-function advance(state: RunState, ok: boolean, now: number): RunState {
-  const question = questionAt(state.seed, state.index);
-  const elapsed = now - state.shownAt;
-  const endsAt = ok ? state.endsAt : state.endsAt - SKIP_PENALTY_MS;
-  const streak = ok ? state.streak + 1 : 0;
+function makeReducer<Q>(game: ChoiceGame<Q>) {
+  return function reducer(state: RunState, action: Action): RunState {
+    switch (action.type) {
+      case "start":
+        return {
+          ...EMPTY,
+          phase: "running",
+          seed: action.seed,
+          endsAt: action.now + game.roundMs,
+          shownAt: action.now,
+        };
 
-  const next: RunState = {
-    ...state,
-    index: state.index + 1,
-    typed: "",
-    attempted: state.attempted + 1,
-    correct: state.correct + (ok ? 1 : 0),
-    streak,
-    bestStreak: Math.max(state.bestStreak, streak),
-    points:
-      state.points +
-      (ok ? score(question, elapsed, state.streak) + streakMilestoneBonus(streak) : WRONG_POINTS),
-    endsAt,
-    shownAt: now,
-    feedback: { id: state.index, ok },
-  };
+      case "answer": {
+        if (state.phase !== "running") return state;
 
-  return endsAt <= now ? { ...next, phase: "done" } : next;
-}
+        const question = game.questionAt(state.seed, state.index);
+        const ok = game.validate(question, action.chosen);
+        const elapsed = action.now - state.shownAt;
+        const endsAt = ok ? state.endsAt : state.endsAt - game.wrongPenaltyMs;
+        const streak = ok ? state.streak + 1 : 0;
 
-function reducer(state: RunState, action: Action): RunState {
-  switch (action.type) {
-    case "start":
-      return {
-        ...EMPTY,
-        phase: "running",
-        seed: action.seed,
-        endsAt: action.now + ROUND_MS,
-        shownAt: action.now,
-      };
+        const next: RunState = {
+          ...state,
+          index: state.index + 1,
+          attempted: state.attempted + 1,
+          correct: state.correct + (ok ? 1 : 0),
+          streak,
+          bestStreak: Math.max(state.bestStreak, streak),
+          points:
+            state.points +
+            (ok
+              ? game.score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
+              : WRONG_POINTS),
+          endsAt,
+          shownAt: action.now,
+          feedback: { id: state.index, ok },
+        };
 
-    case "digit": {
-      if (state.phase !== "running") return state;
-      const question = questionAt(state.seed, state.index);
-      const typed = state.typed + action.digit;
-
-      // Auto-advance the instant the digits match. Nobody should have to press
-      // Enter to confirm an answer they have already finished typing.
-      if (Number(typed) === question.answer) return advance(state, true, action.now);
-
-      // Once you have typed as many digits as the answer has and it still does
-      // not match, it is wrong. Leaving it on screen would just strand you.
-      if (typed.length >= String(question.answer).length) {
-        return advance(state, false, action.now);
+        return endsAt <= action.now ? { ...next, phase: "done" } : next;
       }
 
-      return { ...state, typed };
+      case "finish":
+        return state.phase === "running" ? { ...state, phase: "done" } : state;
     }
-
-    case "backspace":
-      return state.phase === "running" ? { ...state, typed: state.typed.slice(0, -1) } : state;
-
-    case "skip":
-      return state.phase === "running" ? advance(state, false, action.now) : state;
-
-    case "finish":
-      return state.phase === "running" ? { ...state, phase: "done" } : state;
-  }
+  };
 }
 
-export function FlashGame() {
+export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
+  const reducer = useMemo(() => makeReducer(game), [game]);
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
-  const [best, recordBest] = usePersonalBest("cmquant:flash:best");
+  const [best, recordBest] = usePersonalBest(game.storageKey);
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
   // records what the player actually finished with. Computed here rather than
@@ -138,6 +151,10 @@ export function FlashGame() {
     dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
     setNow(Date.now());
   }, [challenge]);
+
+  const answer = useCallback((chosen: number) => {
+    dispatch({ type: "answer", chosen, now: Date.now() });
+  }, []);
 
   useEffect(() => {
     if (run.phase !== "running") return;
@@ -153,21 +170,23 @@ export function FlashGame() {
     if (run.phase === "done") recordBest(runPoints);
   }, [run.phase, runPoints, recordBest]);
 
+  const question = useMemo(
+    () => (run.phase === "running" ? game.questionAt(run.seed, run.index) : null),
+    [game, run.phase, run.seed, run.index]
+  );
+
+  const optionCount = question ? game.optionCount(question) : 0;
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Auto-repeat. Holding a key down fires keydown dozens of times a
       // second, which turned "lean on one arrow" into a viable strategy.
       if (e.repeat) return;
       if (run.phase === "running") {
-        if (/^\d$/.test(e.key)) {
+        const slot = Number(e.key);
+        if (Number.isInteger(slot) && slot >= 1 && slot <= optionCount) {
           e.preventDefault();
-          dispatch({ type: "digit", digit: e.key, now: Date.now() });
-        } else if (e.key === "Backspace") {
-          e.preventDefault();
-          dispatch({ type: "backspace" });
-        } else if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          dispatch({ type: "skip", now: Date.now() });
+          answer(slot - 1);
         }
         return;
       }
@@ -178,20 +197,15 @@ export function FlashGame() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [run.phase, start]);
-
-  const question = useMemo(
-    () => (run.phase === "running" ? questionAt(run.seed, run.index) : null),
-    [run.phase, run.seed, run.index]
-  );
+  }, [run.phase, optionCount, answer, start]);
 
   const remaining = Math.max(0, run.endsAt - now);
 
   if (run.phase === "done") {
     return (
       <ResultsCard
-        gameName="Flash"
-        challengePath="/g/flash"
+        gameName={game.name}
+        challengePath={game.challengePath}
         seed={run.seed}
         points={runPoints}
         rawPoints={run.points}
@@ -209,24 +223,30 @@ export function FlashGame() {
 
   if (run.phase === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+        {game.intro.ornament}
         <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-          Comp / Computational Thinking
+          {game.intro.eyebrow}
         </span>
-        <h1 className="mt-5 text-5xl font-medium tracking-tight sm:text-6xl">Flash</h1>
+        <h1
+          className={
+            game.intro.titleClassName ??
+            "mt-5 text-5xl font-medium tracking-tight sm:text-6xl"
+          }
+        >
+          {game.intro.title}
+        </h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          Arithmetic, one problem at a time, for sixty seconds. Type the answer and
-          it submits itself the moment your digits match, which leaves nothing here
-          to guess at.
+          {game.intro.blurb}
         </p>
 
         {challenge && (
-          <div className="mt-8 border border-hairline px-5 py-3">
+          <div className="mt-8 rounded-panel border border-hairline px-6 py-4">
             <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
               Challenge
             </span>
             <p className="mt-2 text-sm text-primary">
-              Same problems, same order.{" "}
+              Same questions, same order.{" "}
               {challenge.target > 0 && (
                 <>
                   Score to beat{" "}
@@ -241,18 +261,14 @@ export function FlashGame() {
 
         <button
           onClick={start}
-          className="mt-10 border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="mt-10 rounded-control border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
-          Start
+          {game.intro.startLabel}
         </button>
-        <p className="mt-5 text-[11px] text-muted">
-          Number keys. Enter skips and costs two seconds.
-        </p>
+        <p className="mt-5 text-[11px] text-muted">{game.intro.hint}</p>
       </div>
     );
   }
-
-  const expected = String(question!.answer).length;
 
   return (
     <div className="relative flex flex-1 flex-col">
@@ -265,21 +281,27 @@ export function FlashGame() {
 
       <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
         <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">Flash</span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
+            {game.name}
+          </span>
           <span className="tabular text-[10px] text-muted">
-            d{String(question?.difficulty ?? 1).padStart(2, "0")}
+            d{String(question ? game.difficultyOf(question) : 1).padStart(2, "0")}
           </span>
         </div>
         <div className="flex items-center gap-6">
           <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat label="Streak" value={String(run.streak)} tone={run.streak >= 5 ? "pos" : undefined} />
+          <Stat
+            label="Streak"
+            value={String(run.streak)}
+            tone={run.streak >= 5 ? "pos" : undefined}
+          />
           {challenge && challenge.target > 0 && (
             <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
           )}
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 px-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-9 px-4">
         <div className="relative">
           <span className="tabular text-6xl leading-none text-primary">
             {formatClock(remaining)}
@@ -289,35 +311,31 @@ export function FlashGame() {
               key={run.feedback.id}
               className="rise-away tabular absolute -right-16 top-2 text-2xl text-data-neg"
             >
-              −2s
+              −{Math.round(game.wrongPenaltyMs / 1000)}s
             </span>
           )}
         </div>
 
-        <div className="tabular whitespace-nowrap text-[clamp(2rem,7vw,4.5rem)] leading-none text-primary">
-          {question!.display}
-        </div>
+        {game.renderPrompt(question!)}
 
-        {/* One slot per digit of the answer. It tells you how long the answer
-            is without telling you what it is, the way a crossword does. */}
-        <div className="flex items-end gap-2">
-          {Array.from({ length: expected }).map((_, i) => (
-            <span
+        <div className={game.optionsClassName}>
+          {Array.from({ length: optionCount }).map((_, i) => (
+            <button
               key={i}
-              className={`tabular flex h-16 w-11 items-center justify-center border-b-2 text-4xl ${
-                run.typed[i]
-                  ? "border-accent-ink text-primary"
-                  : "border-hairline-strong text-muted"
-              }`}
+              onClick={() => answer(i)}
+              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-4 transition-colors hover:border-accent-ink"
             >
-              {run.typed[i] ?? ""}
-            </span>
+              {game.renderOption(question!, i)}
+              <kbd className="tabular rounded-control border border-accent/40 bg-accent/10 px-2 text-[10px] text-accent-ink">
+                {i + 1}
+              </kbd>
+            </button>
           ))}
         </div>
       </div>
 
       <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        Type the answer. Enter skips and costs two seconds.
+        {game.intro.hint}
       </footer>
     </div>
   );

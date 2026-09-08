@@ -12,7 +12,14 @@ import {
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import {
+  WRONG_POINTS,
+  streakMilestoneBonus,
+  accuracyMultiplier,
+  finalScore,
+} from "@/lib/scoring";
 import { PlayingCard, CardFan } from "@/components/cards/PlayingCard";
+import { deal } from "@/lib/cards";
 
 type Phase = "idle" | "running" | "done";
 
@@ -76,7 +83,11 @@ function reducer(state: RunState, action: Action): RunState {
         correct: state.correct + (ok ? 1 : 0),
         streak,
         bestStreak: Math.max(state.bestStreak, streak),
-        points: state.points + (ok ? score(question, elapsed, state.streak) : 0),
+        points:
+          state.points +
+          (ok
+            ? score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
+            : WRONG_POINTS),
         endsAt,
         shownAt: action.now,
         feedback: { id: state.index, ok, chosen: action.chosen },
@@ -95,6 +106,12 @@ export function PotOddsGame() {
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
   const [best, recordBest] = usePersonalBest("cmquant:potodds:best");
+
+  // The accuracy multiplier lands once, on the whole run, and the personal best
+  // records what the player actually finished with. Computed here rather than
+  // beside the results screen so the persist effect below can see it.
+  const runMultiplier = accuracyMultiplier(run.correct, run.attempted);
+  const runPoints = finalScore(run.points, run.correct, run.attempted);
 
   const start = useCallback(() => {
     dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
@@ -116,11 +133,14 @@ export function PotOddsGame() {
   }, [run.phase, run.endsAt]);
 
   useEffect(() => {
-    if (run.phase === "done") recordBest(run.points);
-  }, [run.phase, run.points, recordBest]);
+    if (run.phase === "done") recordBest(runPoints);
+  }, [run.phase, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Auto-repeat. Holding a key down fires keydown dozens of times a
+      // second, which turned "lean on one arrow" into a viable strategy.
+      if (e.repeat) return;
       if (run.phase === "running") {
         const slot = Number(e.key);
         if (slot >= 1 && slot <= 4) {
@@ -143,6 +163,16 @@ export function PotOddsGame() {
     [run.phase, run.seed, run.index]
   );
 
+  // A real seeded table: your two cards and a three-card board. They are dealt
+  // from the run seed like everything else, so a shared challenge shows both
+  // players the same table. They do not enter the arithmetic - the price you
+  // are being offered is the whole question - but a poker trainer that deals
+  // face-down cards looks broken rather than principled.
+  const table = useMemo(
+    () => (run.phase === "running" ? deal(`${run.seed}#${run.index}`, 5) : []),
+    [run.phase, run.seed, run.index]
+  );
+
   const remaining = Math.max(0, run.endsAt - now);
 
   if (run.phase === "done") {
@@ -151,12 +181,14 @@ export function PotOddsGame() {
         gameName="Pot Odds"
         challengePath="/g/pot-odds"
         seed={run.seed}
-        points={run.points}
+        points={runPoints}
+        rawPoints={run.points}
+        accuracyMultiplier={runMultiplier}
         correct={run.correct}
         attempted={run.attempted}
         bestStreak={run.bestStreak}
         personalBest={best}
-        isPersonalBest={run.points >= best && run.points > 0}
+        isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
         onReplay={start}
       />
@@ -178,9 +210,9 @@ export function PotOddsGame() {
           Pot Odds
         </h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          You are facing a bet. How often do you have to win for calling to break
-          even? Your own call goes into the pot too — that is the part everyone
-          forgets.
+          You are facing a bet. How often do you need to win for calling to break
+          even? The money you put in is part of the pot you are trying to win, and
+          that is the half everyone drops.
         </p>
 
         {challenge && (
@@ -243,11 +275,14 @@ export function PotOddsGame() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 pb-8">
-        {/* Opponent. Face down on purpose: this question is about the price
-            you are being offered, never about the cards. */}
-        <div className="flex gap-1.5 opacity-80">
-          <PlayingCard faceDown size="sm" rotate={-4} />
-          <PlayingCard faceDown size="sm" rotate={4} />
+        {/* The board. */}
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">Board</span>
+          <div className="flex gap-1.5">
+            {table.slice(2).map((code) => (
+              <PlayingCard key={code} code={code} size="sm" />
+            ))}
+          </div>
         </div>
 
         <div className="relative flex flex-col items-center">
@@ -289,9 +324,13 @@ export function PotOddsGame() {
           ))}
         </div>
 
-        <div className="flex gap-1.5 opacity-80">
-          <PlayingCard faceDown size="sm" rotate={-4} />
-          <PlayingCard faceDown size="sm" rotate={4} />
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex gap-1.5">
+            {table.slice(0, 2).map((code) => (
+              <PlayingCard key={code} code={code} size="sm" />
+            ))}
+          </div>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">You</span>
         </div>
       </div>
 

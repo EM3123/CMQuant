@@ -81,9 +81,9 @@ export default function PokerPage() {
             Poker Lab
           </h1>
           <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-secondary">
-            No money changes hands here. The cards are a laboratory for
-            probability, and the only thing you can lose is an argument about
-            equity.
+            Nothing here is played for money. The cards are here because
+            probability is easier to learn when the numbers are attached to a
+            decision you have four seconds to make.
           </p>
         </header>
 
@@ -127,8 +127,8 @@ export default function PokerPage() {
         <footer className="mt-16 space-y-2 text-center text-[11px] leading-relaxed text-muted">
           <p>CM stands for Computational Mathematics.</p>
           <p>
-            Simulated cards only. No wagering, no prizes, no currency of any
-            kind.
+            Simulated cards only. Nothing can be wagered here and nothing can be
+            cashed out.
           </p>
           <p>
             CMQuant is a student-built project and is not affiliated with or

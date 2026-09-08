@@ -26,7 +26,7 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "CMQuant",
   description:
-    "Computational Mathematics. Short, timed, procedurally generated games for mental math, probability and decision-making.",
+    "Computational Mathematics. Sixty-second games for mental arithmetic and probability, generated from a seed so anyone can play the run you played.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

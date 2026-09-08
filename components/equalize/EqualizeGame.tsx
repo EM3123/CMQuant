@@ -12,6 +12,12 @@ import {
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import {
+  WRONG_POINTS,
+  streakMilestoneBonus,
+  accuracyMultiplier,
+  finalScore,
+} from "@/lib/scoring";
 
 type Phase = "idle" | "running" | "done";
 
@@ -79,7 +85,11 @@ function reducer(state: RunState, action: Action): RunState {
         correct: state.correct + (ok ? 1 : 0),
         streak,
         bestStreak: Math.max(state.bestStreak, streak),
-        points: state.points + (ok ? score(question, elapsed, state.streak) : 0),
+        points:
+          state.points +
+          (ok
+            ? score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
+            : WRONG_POINTS),
         endsAt,
         shownAt: action.now,
         feedback: { id: state.index, ok },
@@ -98,6 +108,12 @@ export function EqualizeGame() {
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
   const [best, recordBest] = usePersonalBest("cmquant:equalize:best");
+
+  // The accuracy multiplier lands once, on the whole run, and the personal best
+  // records what the player actually finished with. Computed here rather than
+  // beside the results screen so the persist effect below can see it.
+  const runMultiplier = accuracyMultiplier(run.correct, run.attempted);
+  const runPoints = finalScore(run.points, run.correct, run.attempted);
 
   const start = useCallback(() => {
     dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
@@ -123,11 +139,14 @@ export function EqualizeGame() {
   // store rather than setting state, so the re-render comes from the store's
   // own subscription instead of a cascading update.
   useEffect(() => {
-    if (run.phase === "done") recordBest(run.points);
-  }, [run.phase, run.points, recordBest]);
+    if (run.phase === "done") recordBest(runPoints);
+  }, [run.phase, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Auto-repeat. Holding a key down fires keydown dozens of times a
+      // second, which turned "lean on one arrow" into a viable strategy.
+      if (e.repeat) return;
       if (run.phase === "running") {
         if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
           e.preventDefault();
@@ -160,12 +179,14 @@ export function EqualizeGame() {
         gameName="Equalize"
         challengePath="/"
         seed={run.seed}
-        points={run.points}
+        points={runPoints}
+        rawPoints={run.points}
+        accuracyMultiplier={runMultiplier}
         correct={run.correct}
         attempted={run.attempted}
         bestStreak={run.bestStreak}
         personalBest={best}
-        isPersonalBest={run.points >= best && run.points > 0}
+        isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
         onReplay={start}
       />
@@ -180,8 +201,9 @@ export function EqualizeGame() {
         </span>
         <h1 className="mt-5 text-5xl font-medium tracking-tight sm:text-6xl">Equalize</h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          Two expressions. Pick the larger one before you could finish computing
-          either. Sixty seconds, and a wrong answer costs you two of them.
+          Pick the larger of two expressions before you could finish working out
+          either one. You get sixty seconds, and every wrong answer takes two of
+          them away.
         </p>
 
         {challenge && (

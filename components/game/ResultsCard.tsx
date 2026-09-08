@@ -18,6 +18,8 @@ export function ResultsCard({
   challengePath,
   seed,
   points,
+  rawPoints,
+  accuracyMultiplier,
   correct,
   attempted,
   bestStreak,
@@ -30,7 +32,11 @@ export function ResultsCard({
   /** Route the challenge link should open, e.g. "/" or "/g/pot-odds". */
   challengePath: string;
   seed: string;
+  /** Final score, after the accuracy multiplier. */
   points: number;
+  /** What was earned before the multiplier, so the maths is visible. */
+  rawPoints: number;
+  accuracyMultiplier: number;
   correct: number;
   attempted: number;
   bestStreak: number;
@@ -98,6 +104,23 @@ export function ResultsCard({
             </span>
           )}
         </div>
+
+        {/* Show the multiplier and what it acted on. A score that silently
+            shrank by two thirds reads as a bug rather than a penalty. */}
+        {attempted > 0 && accuracyMultiplier !== 1 && (
+          <div className="mb-4 text-center">
+            <span className="tabular text-[11px] text-muted">
+              {rawPoints.toLocaleString()} earned
+            </span>
+            <span
+              className={`tabular ml-2 text-[11px] ${
+                accuracyMultiplier > 1 ? "text-data-pos" : "text-data-neg"
+              }`}
+            >
+              ×{accuracyMultiplier} accuracy
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 border-t border-hairline pt-4">
           <CardStat label="Correct" value={`${correct}/${attempted}`} />
