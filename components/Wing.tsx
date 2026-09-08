@@ -1,0 +1,90 @@
+import type { ReactNode } from "react";
+
+export type WingName = "comp" | "poker";
+
+/**
+ * The route root. Everything below it reads its colours, radii, shadows and
+ * display face from the data-wing attribute stamped here, so a page never
+ * names a wing and a component never branches on one.
+ *
+ * COMP is a fixed canvas: the viewport is the window, panes scroll inside it,
+ * the page itself never does. POKER is fluid and breathes - it is a room, not
+ * an instrument.
+ */
+export function Wing({
+  wing,
+  children,
+  className = "",
+}: {
+  wing: WingName;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (wing === "poker") {
+    return (
+      <div
+        data-wing="poker"
+        className={`wing-ambient min-h-dvh bg-surface text-primary ${className}`}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-wing="comp"
+      className={`wing-grid flex h-dvh flex-col overflow-hidden bg-surface text-primary ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Hairline-framed pane. Square in COMP, softened and lit in POKER. */
+export function Panel({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`border border-hairline bg-surface-raised rounded-panel shadow-panel ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Small all-caps label. The workbench uses these constantly; the poker room
+ *  uses them rarely, and wider.
+ *
+ *  Colour is a prop rather than something you pass through className, because
+ *  two text-colour utilities on one element are resolved by stylesheet order,
+ *  not by the order you wrote them. */
+export function Label({
+  children,
+  tone = "secondary",
+  className = "",
+}: {
+  children: ReactNode;
+  tone?: "secondary" | "muted" | "rare" | "accent";
+  className?: string;
+}) {
+  const tones = {
+    secondary: "text-secondary",
+    muted: "text-muted",
+    rare: "text-rare",
+    accent: "text-accent-ink",
+  } as const;
+
+  return (
+    <span
+      className={`${tones[tone]} text-[10px] uppercase tracking-[0.18em] wing-poker:tracking-[0.3em] ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
