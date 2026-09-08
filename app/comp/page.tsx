@@ -96,8 +96,10 @@ export default function CompPage() {
           {/* A grid rather than a table, because every live row has to be a
               single link and an anchor cannot wrap a table row. */}
           <div className="text-xs">
-            <div className="grid grid-cols-[3.5rem_1fr_5rem_5.5rem] gap-x-3 border-b border-hairline py-2 text-secondary">
-              <span>ID</span>
+            <div className="grid grid-cols-[1fr_3.5rem_4.5rem] gap-x-3 border-b border-hairline py-2 text-secondary sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
+              {/* The ID column is the first thing to go on a narrow screen - it
+                  is a label for the drill, and the name is right beside it. */}
+              <span className="hidden sm:block">ID</span>
               <span>Drill</span>
               <span className="text-right">Best</span>
               <span className="text-right">Status</span>
@@ -106,11 +108,11 @@ export default function CompPage() {
             {DRILLS.map((drill) => {
               const row = (
                 <div
-                  className={`grid grid-cols-[3.5rem_1fr_5rem_5.5rem] items-baseline gap-x-3 border-b border-hairline py-3 ${
+                  className={`grid grid-cols-[1fr_3.5rem_4.5rem] items-baseline gap-x-3 border-b border-hairline py-3 sm:grid-cols-[3.5rem_1fr_5rem_5.5rem] ${
                     drill.href ? "group hover:bg-white/[0.03]" : "opacity-60"
                   }`}
                 >
-                  <span className="tabular text-muted">{drill.id}</span>
+                  <span className="tabular hidden text-muted sm:block">{drill.id}</span>
                   <span>
                     <span
                       className={
@@ -121,7 +123,9 @@ export default function CompPage() {
                     >
                       {drill.name}
                     </span>
-                    <span className="ml-3 text-muted">{drill.skill}</span>
+                    <span className="mt-0.5 block text-muted sm:ml-3 sm:mt-0 sm:inline">
+                      {drill.skill}
+                    </span>
                   </span>
                   <span className="text-right text-primary">
                     {drill.storageKey ? (

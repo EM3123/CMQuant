@@ -246,7 +246,7 @@ export function FlashGame() {
           Start
         </button>
         <p className="mt-5 text-[11px] text-muted">
-          Number keys. Enter skips and costs two seconds.
+          Number keys, or tap the pad. Skip costs two seconds.
         </p>
       </div>
     );
@@ -279,9 +279,9 @@ export function FlashGame() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 px-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 sm:gap-8">
         <div className="relative">
-          <span className="tabular text-6xl leading-none text-primary">
+          <span className="tabular text-5xl leading-none text-primary sm:text-6xl">
             {formatClock(remaining)}
           </span>
           {run.feedback && !run.feedback.ok && (
@@ -304,7 +304,7 @@ export function FlashGame() {
           {Array.from({ length: expected }).map((_, i) => (
             <span
               key={i}
-              className={`tabular flex h-16 w-11 items-center justify-center border-b-2 text-4xl ${
+              className={`tabular flex h-12 w-9 items-center justify-center border-b-2 text-3xl sm:h-16 sm:w-11 sm:text-4xl ${
                 run.typed[i]
                   ? "border-accent-ink text-primary"
                   : "border-hairline-strong text-muted"
@@ -314,12 +314,76 @@ export function FlashGame() {
             </span>
           ))}
         </div>
+
+        {/* Flash was keyboard-only, which made it unplayable on a phone - and a
+            phone is exactly where a shared challenge link gets opened. The pad
+            renders everywhere rather than behind a touch check, because a
+            visible pad also tells a first-time player what the game wants. */}
+        <Keypad
+          onDigit={(digit) => dispatch({ type: "digit", digit, now: Date.now() })}
+          onBackspace={() => dispatch({ type: "backspace" })}
+          onSkip={() => dispatch({ type: "skip", now: Date.now() })}
+        />
       </div>
 
       <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        Type the answer. Enter skips and costs two seconds.
+        Type the answer, or tap. Skip costs two seconds.
       </footer>
     </div>
+  );
+}
+
+function Keypad({
+  onDigit,
+  onBackspace,
+  onSkip,
+}: {
+  onDigit: (digit: string) => void;
+  onBackspace: () => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="grid w-full max-w-[17rem] grid-cols-3 gap-1.5 sm:max-w-xs">
+      {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
+        <Key key={digit} onPress={() => onDigit(digit)}>
+          {digit}
+        </Key>
+      ))}
+      <Key onPress={onSkip} muted>
+        Skip
+      </Key>
+      <Key onPress={() => onDigit("0")}>0</Key>
+      <Key onPress={onBackspace} muted>
+        ⌫
+      </Key>
+    </div>
+  );
+}
+
+function Key({
+  children,
+  onPress,
+  muted = false,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  muted?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      // Pointer-down rather than click: a click waits for the release, and this
+      // game is scored in tenths of a second.
+      onPointerDown={(e) => {
+        e.preventDefault();
+        onPress();
+      }}
+      className={`tabular touch-manipulation select-none border border-hairline py-3 text-xl transition-colors active:border-accent-ink active:bg-white/[0.06] sm:py-2.5 sm:text-lg ${
+        muted ? "text-secondary" : "text-primary"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
