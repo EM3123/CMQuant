@@ -1,28 +1,30 @@
-import { Wing, Panel, Label } from "@/components/Wing";
+import Link from "next/link";
+import { Wing } from "@/components/Wing";
+import { PlayingCard } from "@/components/cards/PlayingCard";
 
 const TABLES = [
   {
-    key: "P",
     name: "Pot Odds",
     line: "Break-even probability from a pot and a bet.",
+    href: "/g/pot-odds",
     status: "Open",
   },
   {
-    key: "O",
     name: "Outs",
     line: "Count the cards that still save the hand.",
-    status: "Open",
+    href: null,
+    status: "Dealing soon",
   },
   {
-    key: "E",
     name: "Equity",
     line: "Run the hand out, ten thousand times.",
+    href: null,
     status: "Phase 2",
   },
   {
-    key: "C",
     name: "Combinatorics",
-    line: "How many ways can that range contain it.",
+    line: "How many ways a range can contain it.",
+    href: null,
     status: "Phase 2",
   },
 ];
@@ -30,55 +32,94 @@ const TABLES = [
 export default function PokerPage() {
   return (
     <Wing wing="poker">
-      <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-6 py-14">
-        <header className="spotlight text-center">
+      <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-6 py-10">
+        <nav className="flex shrink-0 items-center justify-between">
+          <Link href="/" className="text-sm font-medium tracking-tight">
+            CMQuant
+          </Link>
+          <Link
+            href="/comp"
+            className="text-[10px] uppercase tracking-[0.3em] text-secondary transition-colors hover:text-primary"
+          >
+            Comp
+          </Link>
+        </nav>
+
+        {/* The table. A felt surface catching the lamp, with a hand on it -
+            rather than a header floating in a gradient. */}
+        <header className="relative mt-14 flex flex-col items-center text-center">
           <div className="spotlight-glow" />
-          <Label>Probability in Practice</Label>
-          <h1 className="mt-5 font-display text-6xl font-light tracking-wing text-rare">
+
+          <div className="relative flex w-full justify-center pb-6">
+            {/* Felt, and the rail around it. The ellipse sits low and wide so
+                the hand rests on the near edge of the table rather than
+                hovering over a dark shape. */}
+            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] bg-[radial-gradient(58%_68%_at_50%_50%,rgba(19,92,46,0.85)_0%,rgba(8,48,26,0.75)_52%,transparent_78%)] shadow-[inset_0_0_70px_rgba(0,0,0,0.75)]" />
+            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] border border-gold-leaf/15" />
+
+            {/* Shadow the hand casts onto the felt. */}
+            <div className="absolute bottom-8 left-1/2 h-8 w-64 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
+
+            <div className="relative flex items-end">
+              <PlayingCard code="As" size="lg" rotate={-13} lift={10} />
+              <div className="-ml-5">
+                <PlayingCard code="Kd" size="lg" rotate={-4} />
+              </div>
+              <div className="-ml-5">
+                <PlayingCard faceDown size="lg" rotate={5} />
+              </div>
+              <div className="-ml-5">
+                <PlayingCard faceDown size="lg" rotate={14} lift={10} />
+              </div>
+            </div>
+          </div>
+
+          <span className="mt-14 text-[10px] uppercase tracking-[0.3em] text-secondary">
+            Probability in Practice
+          </span>
+          <h1 className="mt-4 font-display text-6xl font-light tracking-wing text-rare sm:text-7xl">
             Poker Lab
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+          <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-secondary">
             No money changes hands here. The cards are a laboratory for
             probability, and the only thing you can lose is an argument about
             equity.
           </p>
         </header>
 
-        <div className="mt-16 grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2">
-          {TABLES.map((t) => {
-            const open = t.status === "Open";
-            return (
-              <Panel
-                key={t.key}
-                className="group relative overflow-hidden p-7 backdrop-blur-md transition-shadow duration-200"
+        <div className="mt-16 flex-1">
+          <div className="rule-x" />
+          {TABLES.map((table) => {
+            const open = Boolean(table.href);
+            const row = (
+              <div
+                className={`flex items-baseline gap-5 py-6 transition-colors ${
+                  open ? "group cursor-pointer" : "opacity-55"
+                }`}
               >
-                <div className="flex items-start justify-between gap-6">
-                  <div>
-                    <h2 className="font-display text-3xl font-light tracking-wing text-primary">
-                      {t.name}
-                    </h2>
-                    <p className="mt-3 max-w-xs text-sm leading-relaxed text-secondary">
-                      {t.line}
-                    </p>
-                  </div>
+                <h2
+                  className={`font-display text-3xl font-light tracking-wing ${
+                    open ? "text-primary group-hover:text-rare" : "text-primary"
+                  }`}
+                >
+                  {table.name}
+                </h2>
+                <p className="hidden flex-1 text-sm text-secondary sm:block">{table.line}</p>
+                <span
+                  className={`shrink-0 text-[10px] uppercase tracking-[0.3em] ${
+                    open ? "text-rare" : "text-muted"
+                  }`}
+                >
+                  {table.status}
+                </span>
+              </div>
+            );
 
-                  {/* Hotkey. Backlit rather than filled - the red is a light
-                      source in this wing, not a paint. */}
-                  <kbd
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-accent/45 bg-accent/10 text-sm text-accent-ink shadow-spot"
-                    data-numeric
-                  >
-                    {t.key}
-                  </kbd>
-                </div>
-
-                <div className="mt-8 flex items-center justify-between">
-                  <Label tone={open ? "rare" : "muted"}>{t.status}</Label>
-                  <span className="text-xs tracking-wing text-muted" data-numeric>
-                    {open ? "60s" : "—"}
-                  </span>
-                </div>
-              </Panel>
+            return (
+              <div key={table.name}>
+                {table.href ? <Link href={table.href}>{row}</Link> : row}
+                <div className="rule-x" />
+              </div>
             );
           })}
         </div>

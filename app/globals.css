@@ -261,10 +261,12 @@ body {
 /* POKER: felt fading into the dark corners, plus a warm overhead lamp.
    Two radials and a vignette, no images. */
 @utility wing-ambient {
+  /* The red is a lamp, not a paint job. Kept low so it reads as light in the
+     room rather than a maroon wash across the whole page. */
   background-image: radial-gradient(
-      110% 70% at 50% -5%,
-      color-mix(in oklab, var(--color-carnegie-red) 20%, transparent) 0%,
-      transparent 58%
+      90% 55% at 50% -8%,
+      color-mix(in oklab, var(--color-carnegie-red) 13%, transparent) 0%,
+      transparent 62%
     ),
     radial-gradient(
       100% 55% at 50% 104%,

@@ -1,18 +1,16 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 /**
  * The two pieces of state that live outside React: the challenge sitting in the
- * URL, and the personal best sitting in localStorage.
+ * URL, and personal bests sitting in localStorage.
  *
  * Both differ between the server render and the browser, so neither can be read
  * during render. Reading them in an effect and calling setState works but costs
  * a cascading render on every mount, so they are modelled as what they actually
  * are - external stores that React subscribes to.
  */
-
-const BEST_KEY = "cmquant:equalize:best";
 
 export type Challenge = { seed: string; target: number };
 
@@ -50,45 +48,64 @@ export function useChallenge(): Challenge | null {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Personal best (localStorage)                                               */
+/* Personal bests (localStorage)                                              */
 /* -------------------------------------------------------------------------- */
 
-const bestListeners = new Set<() => void>();
-let bestCache: number | null = null;
+type BestStore = { cache: number | null; listeners: Set<() => void> };
 
-function subscribeBest(onChange: () => void): () => void {
-  bestListeners.add(onChange);
-  return () => {
-    bestListeners.delete(onChange);
-  };
+// One store per storage key, so each game keeps its own best and a write to one
+// never re-renders a component watching another.
+const stores = new Map<string, BestStore>();
+
+function storeFor(key: string): BestStore {
+  let store = stores.get(key);
+  if (!store) {
+    store = { cache: null, listeners: new Set() };
+    stores.set(key, store);
+  }
+  return store;
 }
 
-function readBest(): number {
-  if (bestCache !== null) return bestCache;
+function readBest(key: string): number {
+  const store = storeFor(key);
+  if (store.cache !== null) return store.cache;
   try {
-    const stored = Number(window.localStorage.getItem(BEST_KEY));
-    bestCache = Number.isFinite(stored) ? stored : 0;
+    const stored = Number(window.localStorage.getItem(key));
+    store.cache = Number.isFinite(stored) ? stored : 0;
   } catch {
     // Private mode, or storage disabled. A missing best is not an error.
-    bestCache = 0;
+    store.cache = 0;
   }
-  return bestCache;
+  return store.cache;
 }
 
-function writeBest(points: number): void {
-  if (points <= readBest()) return;
-  bestCache = points;
+function writeBest(key: string, points: number): void {
+  if (points <= readBest(key)) return;
+  const store = storeFor(key);
+  store.cache = points;
   try {
-    window.localStorage.setItem(BEST_KEY, String(points));
+    window.localStorage.setItem(key, String(points));
   } catch {
     // Nothing to do; the run still shows the right number for this session.
   }
-  for (const listener of bestListeners) listener();
+  for (const listener of store.listeners) listener();
 }
 
-export function usePersonalBest(): [number, (points: number) => void] {
-  const best = useSyncExternalStore(subscribeBest, readBest, () => 0);
-  // writeBest is module-level and never changes identity, so it is already a
-  // stable dependency.
-  return [best, writeBest];
+export function usePersonalBest(key: string): [number, (points: number) => void] {
+  const api = useMemo(() => {
+    const store = storeFor(key);
+    return {
+      subscribe(onChange: () => void) {
+        store.listeners.add(onChange);
+        return () => {
+          store.listeners.delete(onChange);
+        };
+      },
+      getSnapshot: () => readBest(key),
+      write: (points: number) => writeBest(key, points),
+    };
+  }, [key]);
+
+  const best = useSyncExternalStore(api.subscribe, api.getSnapshot, () => 0);
+  return [best, api.write];
 }

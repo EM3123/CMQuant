@@ -3,12 +3,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import {
   questionAt,
-  validate,
   score,
   ROUND_MS,
-  WRONG_PENALTY_MS,
-  type Side,
-} from "@/lib/games/equalize";
+  SKIP_PENALTY_MS,
+} from "@/lib/games/flash";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
@@ -19,6 +17,7 @@ type RunState = {
   phase: Phase;
   seed: string;
   index: number;
+  typed: string;
   correct: number;
   attempted: number;
   streak: number;
@@ -26,7 +25,6 @@ type RunState = {
   points: number;
   endsAt: number;
   shownAt: number;
-  /** Bumped on every answer so the flash overlay remounts and replays. */
   feedback: { id: number; ok: boolean } | null;
 };
 
@@ -34,6 +32,7 @@ const EMPTY: RunState = {
   phase: "idle",
   seed: "",
   index: 0,
+  typed: "",
   correct: 0,
   attempted: 0,
   streak: 0,
@@ -46,8 +45,34 @@ const EMPTY: RunState = {
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "answer"; side: Side; now: number }
+  | { type: "digit"; digit: string; now: number }
+  | { type: "backspace" }
+  | { type: "skip"; now: number }
   | { type: "finish" };
+
+/** Close the current question, right or wrong, and move to the next one. */
+function advance(state: RunState, ok: boolean, now: number): RunState {
+  const question = questionAt(state.seed, state.index);
+  const elapsed = now - state.shownAt;
+  const endsAt = ok ? state.endsAt : state.endsAt - SKIP_PENALTY_MS;
+  const streak = ok ? state.streak + 1 : 0;
+
+  const next: RunState = {
+    ...state,
+    index: state.index + 1,
+    typed: "",
+    attempted: state.attempted + 1,
+    correct: state.correct + (ok ? 1 : 0),
+    streak,
+    bestStreak: Math.max(state.bestStreak, streak),
+    points: state.points + (ok ? score(question, elapsed, state.streak) : 0),
+    endsAt,
+    shownAt: now,
+    feedback: { id: state.index, ok },
+  };
+
+  return endsAt <= now ? { ...next, phase: "done" } : next;
+}
 
 function reducer(state: RunState, action: Action): RunState {
   switch (action.type) {
@@ -60,55 +85,46 @@ function reducer(state: RunState, action: Action): RunState {
         shownAt: action.now,
       };
 
-    case "answer": {
+    case "digit": {
       if (state.phase !== "running") return state;
-
       const question = questionAt(state.seed, state.index);
-      const ok = validate(question, action.side);
-      const elapsed = action.now - state.shownAt;
+      const typed = state.typed + action.digit;
 
-      // A wrong answer costs time rather than points. On a two-way choice,
-      // guessing has to be worse than thinking or the game is a coin flip.
-      const endsAt = ok ? state.endsAt : state.endsAt - WRONG_PENALTY_MS;
-      const streak = ok ? state.streak + 1 : 0;
+      // Auto-advance the instant the digits match. Nobody should have to press
+      // Enter to confirm an answer they have already finished typing.
+      if (Number(typed) === question.answer) return advance(state, true, action.now);
 
-      const next: RunState = {
-        ...state,
-        index: state.index + 1,
-        attempted: state.attempted + 1,
-        correct: state.correct + (ok ? 1 : 0),
-        streak,
-        bestStreak: Math.max(state.bestStreak, streak),
-        points: state.points + (ok ? score(question, elapsed, state.streak) : 0),
-        endsAt,
-        shownAt: action.now,
-        feedback: { id: state.index, ok },
-      };
+      // Once you have typed as many digits as the answer has and it still does
+      // not match, it is wrong. Leaving it on screen would just strand you.
+      if (typed.length >= String(question.answer).length) {
+        return advance(state, false, action.now);
+      }
 
-      return endsAt <= action.now ? { ...next, phase: "done" } : next;
+      return { ...state, typed };
     }
+
+    case "backspace":
+      return state.phase === "running" ? { ...state, typed: state.typed.slice(0, -1) } : state;
+
+    case "skip":
+      return state.phase === "running" ? advance(state, false, action.now) : state;
 
     case "finish":
       return state.phase === "running" ? { ...state, phase: "done" } : state;
   }
 }
 
-export function EqualizeGame() {
+export function FlashGame() {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
-  const [best, recordBest] = usePersonalBest("cmquant:equalize:best");
+  const [best, recordBest] = usePersonalBest("cmquant:flash:best");
 
   const start = useCallback(() => {
     dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
     setNow(Date.now());
   }, [challenge]);
 
-  const answer = useCallback((side: Side) => {
-    dispatch({ type: "answer", side, now: Date.now() });
-  }, []);
-
-  // Clock. 100ms is fine because the digits are tabular and never jitter.
   useEffect(() => {
     if (run.phase !== "running") return;
     const id = window.setInterval(() => {
@@ -119,9 +135,6 @@ export function EqualizeGame() {
     return () => window.clearInterval(id);
   }, [run.phase, run.endsAt]);
 
-  // Persist the personal best once the round closes. This writes to an external
-  // store rather than setting state, so the re-render comes from the store's
-  // own subscription instead of a cascading update.
   useEffect(() => {
     if (run.phase === "done") recordBest(run.points);
   }, [run.phase, run.points, recordBest]);
@@ -129,12 +142,15 @@ export function EqualizeGame() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (run.phase === "running") {
-        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+        if (/^\d$/.test(e.key)) {
           e.preventDefault();
-          answer("left");
-        } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+          dispatch({ type: "digit", digit: e.key, now: Date.now() });
+        } else if (e.key === "Backspace") {
           e.preventDefault();
-          answer("right");
+          dispatch({ type: "backspace" });
+        } else if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          dispatch({ type: "skip", now: Date.now() });
         }
         return;
       }
@@ -145,7 +161,7 @@ export function EqualizeGame() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [run.phase, answer, start]);
+  }, [run.phase, start]);
 
   const question = useMemo(
     () => (run.phase === "running" ? questionAt(run.seed, run.index) : null),
@@ -157,8 +173,8 @@ export function EqualizeGame() {
   if (run.phase === "done") {
     return (
       <ResultsCard
-        gameName="Equalize"
-        challengePath="/"
+        gameName="Flash"
+        challengePath="/g/flash"
         seed={run.seed}
         points={run.points}
         correct={run.correct}
@@ -175,22 +191,22 @@ export function EqualizeGame() {
   if (run.phase === "idle") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <span className="text-secondary text-[10px] uppercase tracking-[0.18em]">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
           Comp / Computational Thinking
         </span>
-        <h1 className="mt-5 text-5xl font-medium tracking-tight sm:text-6xl">Equalize</h1>
+        <h1 className="mt-5 text-5xl font-medium tracking-tight sm:text-6xl">Flash</h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          Two expressions. Pick the larger one before you could finish computing
-          either. Sixty seconds, and a wrong answer costs you two of them.
+          Arithmetic, one problem at a time, for sixty seconds. Type the answer —
+          it submits itself the moment the digits match. Nothing to guess between.
         </p>
 
         {challenge && (
           <div className="mt-8 border border-hairline px-5 py-3">
-            <span className="text-secondary text-[10px] uppercase tracking-[0.18em]">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
               Challenge
             </span>
             <p className="mt-2 text-sm text-primary">
-              Same questions, same order.{" "}
+              Same problems, same order.{" "}
               {challenge.target > 0 && (
                 <>
                   Score to beat{" "}
@@ -200,7 +216,6 @@ export function EqualizeGame() {
                 </>
               )}
             </p>
-            <p className="tabular mt-1 text-[11px] text-muted">seed {challenge.seed}</p>
           </div>
         )}
 
@@ -211,16 +226,16 @@ export function EqualizeGame() {
           Start
         </button>
         <p className="mt-5 text-[11px] text-muted">
-          Arrow keys or A / D. Space to start.
+          Number keys. Enter skips and costs two seconds.
         </p>
       </div>
     );
   }
 
+  const expected = String(question!.answer).length;
+
   return (
     <div className="relative flex flex-1 flex-col">
-      {/* Feedback layer. Keyed on the answer index so it remounts and replays
-          on every single answer, including two of the same kind in a row. */}
       {run.feedback && (
         <div
           key={run.feedback.id}
@@ -230,20 +245,14 @@ export function EqualizeGame() {
 
       <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
         <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-            Equalize
-          </span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">Flash</span>
           <span className="tabular text-[10px] text-muted">
             d{String(question?.difficulty ?? 1).padStart(2, "0")}
           </span>
         </div>
         <div className="flex items-center gap-6">
           <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat
-            label="Streak"
-            value={String(run.streak)}
-            tone={run.streak >= 5 ? "pos" : undefined}
-          />
+          <Stat label="Streak" value={String(run.streak)} tone={run.streak >= 5 ? "pos" : undefined} />
           {challenge && challenge.target > 0 && (
             <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
           )}
@@ -252,35 +261,43 @@ export function EqualizeGame() {
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 px-4">
         <div className="relative">
-          <span className="tabular text-7xl leading-none text-primary">
+          <span className="tabular text-6xl leading-none text-primary">
             {formatClock(remaining)}
           </span>
           {run.feedback && !run.feedback.ok && (
             <span
               key={run.feedback.id}
-              className="rise-away tabular absolute -right-16 top-3 text-2xl text-data-neg"
+              className="rise-away tabular absolute -right-16 top-2 text-2xl text-data-neg"
             >
               −2s
             </span>
           )}
         </div>
 
-        <div className="flex w-full max-w-4xl items-stretch">
-          <ExprButton value={question!.left.display} onClick={() => answer("left")} />
-          <div className="flex w-14 shrink-0 items-center justify-center border-y border-hairline">
-            <span className="text-xs text-muted">vs</span>
-          </div>
-          <ExprButton value={question!.right.display} onClick={() => answer("right")} />
+        <div className="tabular whitespace-nowrap text-[clamp(2rem,7vw,4.5rem)] leading-none text-primary">
+          {question!.display}
         </div>
 
-        <div className="flex items-center gap-16">
-          <KeyHint hint="◀" label="Left" />
-          <KeyHint hint="▶" label="Right" />
+        {/* One slot per digit of the answer. It tells you how long the answer
+            is without telling you what it is, the way a crossword does. */}
+        <div className="flex items-end gap-2">
+          {Array.from({ length: expected }).map((_, i) => (
+            <span
+              key={i}
+              className={`tabular flex h-16 w-11 items-center justify-center border-b-2 text-4xl ${
+                run.typed[i]
+                  ? "border-accent-ink text-primary"
+                  : "border-hairline-strong text-muted"
+              }`}
+            >
+              {run.typed[i] ?? ""}
+            </span>
+          ))}
         </div>
       </div>
 
       <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        Pick the larger expression. A wrong answer costs two seconds.
+        Type the answer. Enter skips and costs two seconds.
       </footer>
     </div>
   );
@@ -288,7 +305,6 @@ export function EqualizeGame() {
 
 function formatClock(ms: number): string {
   const seconds = ms / 1000;
-  // Under ten seconds the tenths do the work of making it feel urgent.
   if (seconds <= 10) return (Math.ceil(ms / 100) / 10).toFixed(1);
   const total = Math.ceil(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -309,32 +325,6 @@ function Stat({
     <div className="flex items-baseline gap-2">
       <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
       <span className={`tabular text-sm ${colour}`}>{value}</span>
-    </div>
-  );
-}
-
-function ExprButton({ value, onClick }: { value: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-1 basis-0 items-center justify-center border border-hairline px-5 py-12 transition-colors hover:border-hairline-strong hover:bg-white/[0.03] sm:py-16"
-    >
-      {/* Never wrap. An expression broken across two lines stops being one
-          glanceable quantity, which is the whole skill being trained. */}
-      <span className="tabular whitespace-nowrap text-[clamp(1.25rem,4vw,2.75rem)] text-primary">
-        {value}
-      </span>
-    </button>
-  );
-}
-
-function KeyHint({ hint, label }: { hint: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="flex h-10 w-10 items-center justify-center border border-hairline-strong text-secondary">
-        {hint}
-      </div>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
     </div>
   );
 }

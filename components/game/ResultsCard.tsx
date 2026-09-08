@@ -9,8 +9,13 @@ import { useState } from "react";
  * ratio, score dominant, wordmark small but present, legible at the size a
  * phone renders it inside a group chat. Everything interactive lives outside
  * the card so it never appears in the capture.
+ *
+ * Shared across games and across wings. It names no colours, so the poker room
+ * and the workbench each render it in their own palette without a second copy.
  */
 export function ResultsCard({
+  gameName,
+  challengePath,
   seed,
   points,
   correct,
@@ -21,6 +26,9 @@ export function ResultsCard({
   challengeTarget,
   onReplay,
 }: {
+  gameName: string;
+  /** Route the challenge link should open, e.g. "/" or "/g/pot-odds". */
+  challengePath: string;
   seed: string;
   points: number;
   correct: number;
@@ -35,7 +43,9 @@ export function ResultsCard({
   const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
 
   async function copyChallenge() {
-    const url = `${window.location.origin}/?seed=${encodeURIComponent(seed)}&s=${points}`;
+    const url = `${window.location.origin}${challengePath}?seed=${encodeURIComponent(
+      seed
+    )}&s=${points}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -49,11 +59,11 @@ export function ResultsCard({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-7 px-4 py-8">
-      <div className="flex aspect-[4/5] w-full max-w-[360px] flex-col border border-hairline-strong bg-surface-sunken px-7 py-8">
+      <div className="flex aspect-[4/5] w-full max-w-[360px] flex-col rounded-panel border border-hairline-strong bg-surface-sunken px-7 py-8 shadow-panel">
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-medium tracking-tight text-primary">CMQuant</span>
           <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-            Equalize
+            {gameName}
           </span>
         </div>
 
@@ -104,13 +114,13 @@ export function ResultsCard({
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           onClick={onReplay}
-          className="border border-hairline-strong px-7 py-3 text-xs uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="rounded-control border border-hairline-strong px-7 py-3 text-xs uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
           Play again
         </button>
         <button
           onClick={copyChallenge}
-          className="border border-hairline px-7 py-3 text-xs uppercase tracking-[0.18em] text-secondary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="rounded-control border border-hairline px-7 py-3 text-xs uppercase tracking-[0.18em] text-secondary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
           {copied ? "Link copied" : "Challenge a friend"}
         </button>

@@ -5,13 +5,14 @@ import {
   questionAt,
   validate,
   score,
+  formatPercent,
   ROUND_MS,
   WRONG_PENALTY_MS,
-  type Side,
-} from "@/lib/games/equalize";
+} from "@/lib/games/potodds";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import { PlayingCard, CardFan } from "@/components/cards/PlayingCard";
 
 type Phase = "idle" | "running" | "done";
 
@@ -26,8 +27,7 @@ type RunState = {
   points: number;
   endsAt: number;
   shownAt: number;
-  /** Bumped on every answer so the flash overlay remounts and replays. */
-  feedback: { id: number; ok: boolean } | null;
+  feedback: { id: number; ok: boolean; chosen: number } | null;
 };
 
 const EMPTY: RunState = {
@@ -46,7 +46,7 @@ const EMPTY: RunState = {
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "answer"; side: Side; now: number }
+  | { type: "answer"; chosen: number; now: number }
   | { type: "finish" };
 
 function reducer(state: RunState, action: Action): RunState {
@@ -64,11 +64,8 @@ function reducer(state: RunState, action: Action): RunState {
       if (state.phase !== "running") return state;
 
       const question = questionAt(state.seed, state.index);
-      const ok = validate(question, action.side);
+      const ok = validate(question, action.chosen);
       const elapsed = action.now - state.shownAt;
-
-      // A wrong answer costs time rather than points. On a two-way choice,
-      // guessing has to be worse than thinking or the game is a coin flip.
       const endsAt = ok ? state.endsAt : state.endsAt - WRONG_PENALTY_MS;
       const streak = ok ? state.streak + 1 : 0;
 
@@ -82,7 +79,7 @@ function reducer(state: RunState, action: Action): RunState {
         points: state.points + (ok ? score(question, elapsed, state.streak) : 0),
         endsAt,
         shownAt: action.now,
-        feedback: { id: state.index, ok },
+        feedback: { id: state.index, ok, chosen: action.chosen },
       };
 
       return endsAt <= action.now ? { ...next, phase: "done" } : next;
@@ -93,22 +90,21 @@ function reducer(state: RunState, action: Action): RunState {
   }
 }
 
-export function EqualizeGame() {
+export function PotOddsGame() {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
-  const [best, recordBest] = usePersonalBest("cmquant:equalize:best");
+  const [best, recordBest] = usePersonalBest("cmquant:potodds:best");
 
   const start = useCallback(() => {
     dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
     setNow(Date.now());
   }, [challenge]);
 
-  const answer = useCallback((side: Side) => {
-    dispatch({ type: "answer", side, now: Date.now() });
+  const answer = useCallback((chosen: number) => {
+    dispatch({ type: "answer", chosen, now: Date.now() });
   }, []);
 
-  // Clock. 100ms is fine because the digits are tabular and never jitter.
   useEffect(() => {
     if (run.phase !== "running") return;
     const id = window.setInterval(() => {
@@ -119,9 +115,6 @@ export function EqualizeGame() {
     return () => window.clearInterval(id);
   }, [run.phase, run.endsAt]);
 
-  // Persist the personal best once the round closes. This writes to an external
-  // store rather than setting state, so the re-render comes from the store's
-  // own subscription instead of a cascading update.
   useEffect(() => {
     if (run.phase === "done") recordBest(run.points);
   }, [run.phase, run.points, recordBest]);
@@ -129,12 +122,10 @@ export function EqualizeGame() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (run.phase === "running") {
-        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+        const slot = Number(e.key);
+        if (slot >= 1 && slot <= 4) {
           e.preventDefault();
-          answer("left");
-        } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
-          e.preventDefault();
-          answer("right");
+          answer(slot - 1);
         }
         return;
       }
@@ -157,8 +148,8 @@ export function EqualizeGame() {
   if (run.phase === "done") {
     return (
       <ResultsCard
-        gameName="Equalize"
-        challengePath="/"
+        gameName="Pot Odds"
+        challengePath="/g/pot-odds"
         seed={run.seed}
         points={run.points}
         correct={run.correct}
@@ -174,23 +165,31 @@ export function EqualizeGame() {
 
   if (run.phase === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <span className="text-secondary text-[10px] uppercase tracking-[0.18em]">
-          Comp / Computational Thinking
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+        <div className="spotlight">
+          <div className="spotlight-glow" />
+          <CardFan cards={["As", "Kd", null, null]} size="lg" className="justify-center" />
+        </div>
+
+        <span className="mt-12 text-[10px] uppercase tracking-[0.3em] text-secondary">
+          Poker Lab / Probability in Practice
         </span>
-        <h1 className="mt-5 text-5xl font-medium tracking-tight sm:text-6xl">Equalize</h1>
+        <h1 className="mt-4 font-display text-6xl font-light tracking-wing text-rare">
+          Pot Odds
+        </h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          Two expressions. Pick the larger one before you could finish computing
-          either. Sixty seconds, and a wrong answer costs you two of them.
+          You are facing a bet. How often do you have to win for calling to break
+          even? Your own call goes into the pot too — that is the part everyone
+          forgets.
         </p>
 
         {challenge && (
-          <div className="mt-8 border border-hairline px-5 py-3">
-            <span className="text-secondary text-[10px] uppercase tracking-[0.18em]">
+          <div className="mt-8 rounded-panel border border-hairline px-6 py-4">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
               Challenge
             </span>
             <p className="mt-2 text-sm text-primary">
-              Same questions, same order.{" "}
+              Same spots, same order.{" "}
               {challenge.target > 0 && (
                 <>
                   Score to beat{" "}
@@ -200,18 +199,17 @@ export function EqualizeGame() {
                 </>
               )}
             </p>
-            <p className="tabular mt-1 text-[11px] text-muted">seed {challenge.seed}</p>
           </div>
         )}
 
         <button
           onClick={start}
-          className="mt-10 border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="mt-10 rounded-control border border-hairline-strong px-12 py-4 text-sm uppercase tracking-[0.3em] text-primary transition-colors hover:border-rare hover:text-rare"
         >
-          Start
+          Deal
         </button>
         <p className="mt-5 text-[11px] text-muted">
-          Arrow keys or A / D. Space to start.
+          Keys 1 – 4. Space to deal. A wrong answer costs two seconds.
         </p>
       </div>
     );
@@ -219,19 +217,17 @@ export function EqualizeGame() {
 
   return (
     <div className="relative flex flex-1 flex-col">
-      {/* Feedback layer. Keyed on the answer index so it remounts and replays
-          on every single answer, including two of the same kind in a row. */}
       {run.feedback && (
         <div
           key={run.feedback.id}
-          className={`flash-layer ${run.feedback.ok ? "bg-data-pos/20" : "bg-data-neg/25"}`}
+          className={`flash-layer ${run.feedback.ok ? "bg-data-pos/15" : "bg-data-neg/20"}`}
         />
       )}
 
-      <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
+      <header className="flex shrink-0 items-center justify-between px-5 py-3">
         <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-            Equalize
+          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
+            Pot Odds
           </span>
           <span className="tabular text-[10px] text-muted">
             d{String(question?.difficulty ?? 1).padStart(2, "0")}
@@ -239,48 +235,68 @@ export function EqualizeGame() {
         </div>
         <div className="flex items-center gap-6">
           <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat
-            label="Streak"
-            value={String(run.streak)}
-            tone={run.streak >= 5 ? "pos" : undefined}
-          />
+          <Stat label="Streak" value={String(run.streak)} tone={run.streak >= 5 ? "rare" : undefined} />
           {challenge && challenge.target > 0 && (
             <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
           )}
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 px-4">
-        <div className="relative">
-          <span className="tabular text-7xl leading-none text-primary">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 pb-8">
+        {/* Opponent. Face down on purpose: this question is about the price
+            you are being offered, never about the cards. */}
+        <div className="flex gap-1.5 opacity-80">
+          <PlayingCard faceDown size="sm" rotate={-4} />
+          <PlayingCard faceDown size="sm" rotate={4} />
+        </div>
+
+        <div className="relative flex flex-col items-center">
+          <span className="tabular text-5xl leading-none text-primary sm:text-6xl">
             {formatClock(remaining)}
           </span>
           {run.feedback && !run.feedback.ok && (
             <span
               key={run.feedback.id}
-              className="rise-away tabular absolute -right-16 top-3 text-2xl text-data-neg"
+              className="rise-away tabular absolute -right-14 top-2 text-xl text-data-neg"
             >
               −2s
             </span>
           )}
         </div>
 
-        <div className="flex w-full max-w-4xl items-stretch">
-          <ExprButton value={question!.left.display} onClick={() => answer("left")} />
-          <div className="flex w-14 shrink-0 items-center justify-center border-y border-hairline">
-            <span className="text-xs text-muted">vs</span>
+        {/* The table. Felt ellipse with the pot sitting on it. */}
+        <div className="relative w-full max-w-xl">
+          <div className="absolute inset-x-0 -inset-y-4 rounded-[50%] bg-[radial-gradient(60%_70%_at_50%_50%,rgba(11,58,30,0.55),transparent_70%)]" />
+          <div className="relative flex items-center justify-center gap-10 py-7">
+            <Amount label="Pot" value={question!.pot} />
+            <span className="text-muted">/</span>
+            <Amount label="Bet to you" value={question!.bet} tone="accent" />
           </div>
-          <ExprButton value={question!.right.display} onClick={() => answer("right")} />
         </div>
 
-        <div className="flex items-center gap-16">
-          <KeyHint hint="◀" label="Left" />
-          <KeyHint hint="▶" label="Right" />
+        <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+          {question!.options.map((option, i) => (
+            <button
+              key={i}
+              onClick={() => answer(i)}
+              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-5 backdrop-blur-md transition-colors hover:border-rare"
+            >
+              <span className="tabular text-2xl text-primary">{formatPercent(option)}</span>
+              <kbd className="tabular rounded-control border border-accent/40 bg-accent/10 px-2 text-[10px] text-accent-ink">
+                {i + 1}
+              </kbd>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-1.5 opacity-80">
+          <PlayingCard faceDown size="sm" rotate={-4} />
+          <PlayingCard faceDown size="sm" rotate={4} />
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        Pick the larger expression. A wrong answer costs two seconds.
+      <footer className="shrink-0 px-5 py-2 text-center text-[10px] text-muted">
+        Break-even share of the time you must win. Your call is part of the pot.
       </footer>
     </div>
   );
@@ -288,10 +304,32 @@ export function EqualizeGame() {
 
 function formatClock(ms: number): string {
   const seconds = ms / 1000;
-  // Under ten seconds the tenths do the work of making it feel urgent.
   if (seconds <= 10) return (Math.ceil(ms / 100) / 10).toFixed(1);
   const total = Math.ceil(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function Amount({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "accent";
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">{label}</span>
+      <span
+        className={`tabular text-3xl sm:text-4xl ${
+          tone === "accent" ? "text-accent-ink" : "text-primary"
+        }`}
+      >
+        {value.toLocaleString()}
+      </span>
+    </div>
+  );
 }
 
 function Stat({
@@ -301,40 +339,14 @@ function Stat({
 }: {
   label: string;
   value: string;
-  tone?: "pos" | "accent";
+  tone?: "rare" | "accent";
 }) {
   const colour =
-    tone === "pos" ? "text-data-pos" : tone === "accent" ? "text-accent-ink" : "text-primary";
+    tone === "rare" ? "text-rare" : tone === "accent" ? "text-accent-ink" : "text-primary";
   return (
     <div className="flex items-baseline gap-2">
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
+      <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">{label}</span>
       <span className={`tabular text-sm ${colour}`}>{value}</span>
-    </div>
-  );
-}
-
-function ExprButton({ value, onClick }: { value: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-1 basis-0 items-center justify-center border border-hairline px-5 py-12 transition-colors hover:border-hairline-strong hover:bg-white/[0.03] sm:py-16"
-    >
-      {/* Never wrap. An expression broken across two lines stops being one
-          glanceable quantity, which is the whole skill being trained. */}
-      <span className="tabular whitespace-nowrap text-[clamp(1.25rem,4vw,2.75rem)] text-primary">
-        {value}
-      </span>
-    </button>
-  );
-}
-
-function KeyHint({ hint, label }: { hint: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="flex h-10 w-10 items-center justify-center border border-hairline-strong text-secondary">
-        {hint}
-      </div>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
     </div>
   );
 }

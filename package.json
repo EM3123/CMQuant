@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:equalize": "tsx scripts/verify-equalize.ts"
+    "verify:equalize": "tsx scripts/verify-equalize.ts",
+    "verify:potodds": "tsx scripts/verify-potodds.ts",
+    "verify:flash": "tsx scripts/verify-flash.ts",
+    "verify": "npm run verify:equalize && npm run verify:potodds && npm run verify:flash"
   },
   "dependencies": {
     "next": "16.3.4",
