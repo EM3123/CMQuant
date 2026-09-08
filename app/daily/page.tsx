@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Wing, Label } from "@/components/Wing";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   todayKey,
   dailySeed,
@@ -100,10 +101,7 @@ export default function DailyPage() {
         )}
       </div>
 
-      <footer className="flex shrink-0 items-center justify-between border-t border-hairline px-4 py-1.5 text-[10px] text-muted">
-        <span>CM stands for Computational Mathematics.</span>
-        <span>Not affiliated with or endorsed by Carnegie Mellon University.</span>
-      </footer>
+      <SiteFooter />
     </Wing>
   );
 }

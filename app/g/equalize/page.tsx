@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wing } from "@/components/Wing";
+import { SiteFooter } from "@/components/SiteFooter";
 import { EqualizeGame } from "@/components/equalize/EqualizeGame";
 
 export default function EqualizePage() {
@@ -19,10 +20,7 @@ export default function EqualizePage() {
 
       <EqualizeGame />
 
-      <footer className="flex shrink-0 items-center justify-between border-t border-hairline px-4 py-1.5 text-[10px] text-muted">
-        <span>CM stands for Computational Mathematics.</span>
-        <span>Not affiliated with or endorsed by Carnegie Mellon University.</span>
-      </footer>
+      <SiteFooter />
     </Wing>
   );
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PotOddsGame } from "@/components/potodds/PotOddsGame";
+import { OutsGame } from "@/components/outs/OutsGame";
 
-export default function PotOddsPage() {
+export default function OutsPage() {
   return (
     <Wing wing="poker">
       <div className="flex min-h-dvh flex-col">
@@ -19,7 +19,7 @@ export default function PotOddsPage() {
           </Link>
         </nav>
 
-        <PotOddsGame />
+        <OutsGame />
 
         <SiteFooter variant="stack" poker />
       </div>

@@ -10,10 +10,13 @@
     "verify:equalize": "tsx scripts/verify-equalize.ts",
     "verify:potodds": "tsx scripts/verify-potodds.ts",
     "verify:flash": "tsx scripts/verify-flash.ts",
-    "verify": "npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds",
+    "verify": "npm run verify:hand && npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds && npm run verify:outs",
     "verify:approx": "tsx scripts/verify-approx.ts",
     "verify:doomsday": "tsx scripts/verify-doomsday.ts",
-    "verify:memorytiles": "tsx scripts/verify-memorytiles.ts"
+    "verify:memorytiles": "tsx scripts/verify-memorytiles.ts",
+    "verify:hand": "tsx scripts/verify-hand.ts",
+    "verify:outs": "tsx scripts/verify-outs.ts",
+    "new:game": "node scripts/new-game.mjs"
   },
   "dependencies": {
     "next": "16.3.4",

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wing } from "@/components/Wing";
+import { SiteFooter } from "@/components/SiteFooter";
 import { PlayingCard } from "@/components/cards/PlayingCard";
 
 const TABLES = [
@@ -12,8 +13,8 @@ const TABLES = [
   {
     name: "Outs",
     line: "Count the cards that still save the hand.",
-    href: null,
-    status: "Dealing soon",
+    href: "/g/outs",
+    status: "Open",
   },
   {
     name: "Equity",
@@ -124,17 +125,7 @@ export default function PokerPage() {
           })}
         </div>
 
-        <footer className="mt-16 space-y-2 text-center text-[11px] leading-relaxed text-muted">
-          <p>CM stands for Computational Mathematics.</p>
-          <p>
-            Simulated cards only. Nothing can be wagered here and nothing can be
-            cashed out.
-          </p>
-          <p>
-            CMQuant is a student-built project and is not affiliated with or
-            endorsed by Carnegie Mellon University.
-          </p>
-        </footer>
+        <SiteFooter variant="stack" poker />
       </div>
     </Wing>
   );

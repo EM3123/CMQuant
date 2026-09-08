@@ -1,7 +1,7 @@
 # CMQuant
 
 **CM stands for Computational Mathematics.** Short, timed, procedurally generated
-games for mental arithmetic, estimation and probability. Six games are playable;
+games for mental arithmetic, estimation and probability. Seven games are playable;
 the poker wing teaches the same quantitative skills through simulated cards and
 carries no money, wagering or prizes of any kind.
 
@@ -67,6 +67,16 @@ scripts/verify-*.ts   property tests
 ```
 
 ## Adding a game
+
+```bash
+npm run new:game -- bayes "Bayes" comp
+```
+
+That scaffolds the generator, the property test, the component and the route,
+and wires the test into `npm run verify`. See
+[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the full walkthrough.
+
+Done by hand, it is:
 
 1. Write `lib/games/yourgame.ts`. Export `generate(seed, difficulty)`,
    `questionAt(runSeed, index)`, `validate`, `score`, and `difficultyForIndex`.
@@ -157,11 +167,32 @@ replay. That is fine while the board is unranked and labelled as such; it stops
 being fine the day scores start meaning something, which is when generation and
 validation have to move to a server.
 
+## Poker
+
+`lib/poker/hand.ts` categorises a hand. It deliberately does **not** compare two
+hands, which is where a full evaluator's subtle bugs live and where a wrong
+answer would quietly poison an equity number nobody re-checks.
+
+Because it only categorises, it can be proved correct rather than trusted:
+`npm run verify:hand` enumerates all 2,598,960 five-card hands and checks the
+count in every category against the published table. All nine match exactly.
+
+If a game ever needs to rank one hand against another — Equity, Blockers — stop
+and pull a library rather than extending this.
+
+## Ads
+
+Not running, and not recommended yet. The slots exist behind a flag so turning
+them on is a config change, but read [docs/ads.md](docs/ads.md) first: ads make
+the site commercial (so Vercel Hobby stops being allowed), make a consent banner
+legally necessary, and put the poker wing in front of ad-network gambling
+policy.
+
 ## Where this is going
 
-Six games are live and the daily is running. Next is the campus leaderboard
-gated on `@andrew.cmu.edu`, then Outs — which needs a seven-card hand evaluator
-pulled off npm rather than written by hand.
+Seven games are live and the daily is running. Next is the campus leaderboard
+gated on `@andrew.cmu.edu`, then Equity — which is the point where the
+categoriser is not enough and a real evaluator comes off npm.
 
 The moment a subscription launches, this stops being a personal project under
 Vercel's fair-use terms and has to move to a paid plan.

@@ -299,15 +299,28 @@ export function PotOddsGame() {
           )}
         </div>
 
-        {/* The table. Felt ellipse with the pot sitting on it. */}
-        <div className="relative w-full max-w-xl">
-          <div className="absolute inset-x-0 -inset-y-4 rounded-[50%] bg-[radial-gradient(60%_70%_at_50%_50%,rgba(11,58,30,0.55),transparent_70%)]" />
-          <div className="relative flex items-center justify-center gap-10 py-7">
-            <Amount label="Pot" value={question!.pot} />
-            <span className="text-muted">/</span>
-            <Amount label="Bet to you" value={question!.bet} tone="accent" />
+        {/* The spot.
+            This used to read "POT 900 / BET TO YOU 850". On a screen full of
+            percentages a slash between two numbers reads as division, so the
+            first thing a player saw was 900 ÷ 850. Now it is a labelled ledger
+            with the numbers right-aligned.
+
+            The pot after the call is deliberately NOT shown. Building that
+            denominator - remembering your own call belongs in it - is the
+            entire skill; printing it would answer the question. */}
+        <div className="relative w-full max-w-sm">
+          <div className="absolute inset-x-0 -inset-y-5 rounded-[50%] bg-[radial-gradient(60%_70%_at_50%_50%,rgba(11,58,30,0.5),transparent_70%)]" />
+          <div className="relative rounded-panel border border-hairline bg-surface-raised/70 px-6 py-5 backdrop-blur-md">
+            <Line label="Pot" value={question!.pot} />
+            <Line label="They bet" value={question!.bet} tone="accent" />
+            <div className="my-3 h-px bg-hairline" />
+            <Line label="To call" value={question!.bet} strong />
           </div>
         </div>
+
+        <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
+          How often do you need to win for that call to break even?
+        </p>
 
         <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
           {question!.options.map((option, i) => (
@@ -335,7 +348,7 @@ export function PotOddsGame() {
       </div>
 
       <footer className="shrink-0 px-5 py-2 text-center text-[10px] text-muted">
-        Break-even share of the time you must win. Your call is part of the pot.
+        Your call goes into the pot you are trying to win.
       </footer>
     </div>
   );
@@ -348,20 +361,24 @@ function formatClock(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-function Amount({
+/** One row of the spot. Label left, number right, tabular so the columns of
+ *  digits line up between rows and between questions. */
+function Line({
   label,
   value,
   tone,
+  strong = false,
 }: {
   label: string;
   value: number;
   tone?: "accent";
+  strong?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex items-baseline justify-between gap-6 py-1">
       <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">{label}</span>
       <span
-        className={`tabular text-3xl sm:text-4xl ${
+        className={`tabular ${strong ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"} ${
           tone === "accent" ? "text-accent-ink" : "text-primary"
         }`}
       >
