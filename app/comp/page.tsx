@@ -22,10 +22,10 @@ const DRILLS = [
   {
     id: "MTL",
     name: "Memory Tiles",
-    skill: "Spatial recall, scaling upward from 4×4",
-    href: null,
-    storageKey: null,
-    status: "QUEUED",
+    skill: "Spatial recall, on a board that keeps growing",
+    href: "/g/memory-tiles",
+    storageKey: "cmquant:memorytiles:best",
+    status: "LIVE",
   },
   {
     id: "APX",
@@ -90,7 +90,7 @@ export default function CompPage() {
 
           <div className="mt-10 flex items-center justify-between border-b border-hairline pb-1.5">
             <Label>Drill index</Label>
-            <Label>4 live</Label>
+            <Label>5 live</Label>
           </div>
 
           {/* A grid rather than a table, because every live row has to be a
