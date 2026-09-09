@@ -23,6 +23,21 @@ import {
 } from "@/lib/poker/hand";
 import type { CardCode } from "@/components/cards/PlayingCard";
 
+/** Nameable ways to get an out count wrong. */
+export type OutsMistake = "exact-only" | "familiar-count" | null;
+
+export const MISTAKE_LABEL: Record<Exclude<OutsMistake, null>, string> = {
+  "exact-only": "Counted only the cards that make exactly that hand",
+  "familiar-count": "Used a memorised count from a different draw",
+};
+
+export const MISTAKE_FIX: Record<Exclude<OutsMistake, null>, string> = {
+  "exact-only":
+    "A card that makes something better still saves the hand. Count everything that reaches the target or passes it.",
+  "familiar-count":
+    "Nine for a flush draw and eight for an open-ender are worth knowing, but they are answers to specific board textures. Count this board.",
+};
+
 export type OutsQuestion = {
   hole: CardCode[];
   board: CardCode[];
@@ -32,6 +47,8 @@ export type OutsQuestion = {
   /** The true number of outs. */
   outs: number;
   options: number[];
+  /** Aligned with options. Null where an option is only a near miss. */
+  diagnoses: OutsMistake[];
   answerIndex: number;
   difficulty: number;
 };
@@ -113,7 +130,7 @@ export function generate(seed: string, difficulty: number): OutsQuestion {
     if (!viable.length) continue;
 
     const choice = pick(rng, viable);
-    const options = buildOptions(rng, choice.outs, gap);
+    const options = buildOptions(rng, choice.outs, choice.exact, gap);
     if (!options) continue;
 
     return {
@@ -123,6 +140,7 @@ export function generate(seed: string, difficulty: number): OutsQuestion {
       targetName: CATEGORY_NAMES[choice.target],
       outs: choice.outs,
       options: options.sorted,
+      diagnoses: options.diagnoses,
       answerIndex: options.answerIndex,
       difficulty: d,
     };
@@ -139,34 +157,45 @@ export function generate(seed: string, difficulty: number): OutsQuestion {
 function buildOptions(
   rng: Rng,
   answer: number,
+  exactOnly: number,
   gap: number
-): { sorted: number[]; answerIndex: number } | null {
+): { sorted: number[]; diagnoses: OutsMistake[]; answerIndex: number } | null {
   const maxBelow = Math.min(3, Math.floor((answer - 1) / gap));
   if (maxBelow < 0) return null;
   const belowCount = randInt(rng, 0, maxBelow);
 
-  const chosen = [answer];
-  const accept = (value: number): boolean => {
+  const chosen: { value: number; mistake: OutsMistake }[] = [
+    { value: answer, mistake: null },
+  ];
+  const accept = (value: number, mistake: OutsMistake): boolean => {
     if (value < 1 || value > 24) return false;
-    if (chosen.some((existing) => Math.abs(existing - value) < gap)) return false;
-    chosen.push(value);
+    if (chosen.some((e) => Math.abs(e.value - value) < gap)) return false;
+    chosen.push({ value, mistake });
     return true;
   };
 
   const fill = (count: number, direction: -1 | 1): boolean => {
     let need = count;
-    // Familiar counts first, so a wrong answer is usually a real misreading
-    // rather than an arbitrary number.
+
+    // The strongest distractor available: the count you get from tallying only
+    // the cards that land exactly on the target and forgetting that a better
+    // hand also saves you.
+    if (need > 0 && Math.sign(exactOnly - answer) === direction) {
+      if (accept(exactOnly, "exact-only")) need--;
+    }
+
+    // Then the memorised counts, so a wrong answer is usually a real
+    // misreading rather than an arbitrary number.
     const familiar = FAMILIAR_COUNTS.filter(
       (n) => Math.sign(n - answer) === direction
     ).sort(() => rng() - 0.5);
 
     for (const value of familiar) {
       if (need === 0) break;
-      if (accept(value)) need--;
+      if (accept(value, "familiar-count")) need--;
     }
     for (let step = gap; need > 0 && step < gap * 6; step++) {
-      if (accept(answer + direction * step)) need--;
+      if (accept(answer + direction * step, null)) need--;
     }
     return need === 0;
   };
@@ -174,8 +203,12 @@ function buildOptions(
   if (!fill(belowCount, -1)) return null;
   if (!fill(3 - belowCount, 1)) return null;
 
-  const sorted = [...chosen].sort((a, b) => a - b);
-  return { sorted, answerIndex: sorted.indexOf(answer) };
+  const sorted = [...chosen].sort((a, b) => a.value - b.value);
+  return {
+    sorted: sorted.map((o) => o.value),
+    diagnoses: sorted.map((o) => o.mistake),
+    answerIndex: sorted.findIndex((o) => o.value === answer),
+  };
 }
 
 export function difficultyForIndex(index: number): number {

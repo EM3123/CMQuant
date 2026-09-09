@@ -121,6 +121,13 @@ model: its three distractors are forgetting your own call, using the raw
 bet-to-pot ratio, and double-counting the call. Every one is a real error
 someone makes at a table. Random numbers teach nothing.
 
+Once the distractors *are* named errors, keep the names. Return a `diagnoses`
+array alongside `options`, then give the `ChoiceGame` a `diagnose` function that
+maps a chosen index to `{ key, label, fix }`. `ChoiceRun` tallies them across
+the run and the results screen tells the player which mistakes they made and how
+to fix each one. This is the single highest-value thing a generator can do,
+and it costs about twenty lines.
+
 ## Building UI
 
 If the game is a question with numbered choices, describe it as a `ChoiceGame`

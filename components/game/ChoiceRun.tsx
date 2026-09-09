@@ -40,17 +40,32 @@ export type ChoiceGame<Q> = {
   renderOption(question: Q, index: number): ReactNode;
   /** Grid classes for the option row. */
   optionsClassName: string;
+  /**
+   * Optional. Given a wrong choice, name the mistake it represents.
+   *
+   * Games whose distractors are built out of real errors can say which error
+   * a player made rather than only that they missed. Return null when the
+   * option was just a near miss and carries no lesson.
+   */
+  diagnose?(question: Q, chosen: number): Mistake | null;
   intro: {
     eyebrow: string;
     title: string;
     blurb: string;
     startLabel: string;
     hint: string;
+    /** Optional explainer, offered before the round rather than after. */
+    learnHref?: string;
     /** Optional flourish above the title, e.g. a hand of cards. */
     ornament?: ReactNode;
     titleClassName?: string;
   };
 };
+
+/** A named error, and the one sentence that fixes it. */
+export type Mistake = { key: string; label: string; fix: string };
+
+export type MistakeTally = Record<string, { label: string; fix: string; count: number }>;
 
 type Phase = "idle" | "running" | "done";
 
@@ -65,6 +80,7 @@ type RunState = {
   points: number;
   endsAt: number;
   shownAt: number;
+  mistakes: MistakeTally;
   feedback: { id: number; ok: boolean } | null;
 };
 
@@ -79,6 +95,7 @@ const EMPTY: RunState = {
   points: 0,
   endsAt: 0,
   shownAt: 0,
+  mistakes: {},
   feedback: null,
 };
 
@@ -108,11 +125,29 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
         const endsAt = ok ? state.endsAt : state.endsAt - game.wrongPenaltyMs;
         const streak = ok ? state.streak + 1 : 0;
 
+        // Tally the named mistake, if this game can name it.
+        let mistakes = state.mistakes;
+        if (!ok && game.diagnose) {
+          const mistake = game.diagnose(question, action.chosen);
+          if (mistake) {
+            const seen = mistakes[mistake.key];
+            mistakes = {
+              ...mistakes,
+              [mistake.key]: {
+                label: mistake.label,
+                fix: mistake.fix,
+                count: (seen?.count ?? 0) + 1,
+              },
+            };
+          }
+        }
+
         const next: RunState = {
           ...state,
           index: state.index + 1,
           attempted: state.attempted + 1,
           correct: state.correct + (ok ? 1 : 0),
+          mistakes,
           streak,
           bestStreak: Math.max(state.bestStreak, streak),
           points:
@@ -216,6 +251,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        mistakes={run.mistakes}
         onReplay={start}
       />
     );
@@ -266,6 +302,14 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
           {game.intro.startLabel}
         </button>
         <p className="mt-5 text-[11px] text-muted">{game.intro.hint}</p>
+        {game.intro.learnHref && (
+          <a
+            href={game.intro.learnHref}
+            className="mt-6 text-[11px] uppercase tracking-[0.18em] text-secondary underline underline-offset-4 transition-colors hover:text-accent-ink"
+          >
+            How this works
+          </a>
+        )}
       </div>
     );
   }

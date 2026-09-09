@@ -8,6 +8,8 @@ import {
   score,
   ROUND_MS,
   WRONG_PENALTY_MS,
+  MISTAKE_LABEL,
+  MISTAKE_FIX,
   type OutsQuestion,
 } from "@/lib/games/outs";
 
@@ -52,6 +54,11 @@ const OUTS: ChoiceGame<OutsQuestion> = {
     <span className="tabular text-2xl text-primary">{q.options[i]}</span>
   ),
   optionsClassName: "grid w-full max-w-lg grid-cols-4 gap-3",
+  diagnose: (q, chosen) => {
+    const mistake = q.diagnoses[chosen];
+    if (!mistake) return null;
+    return { key: mistake, label: MISTAKE_LABEL[mistake], fix: MISTAKE_FIX[mistake] };
+  },
   intro: {
     eyebrow: "Poker Lab / Probability in Practice",
     title: "Outs",
@@ -59,6 +66,7 @@ const OUTS: ChoiceGame<OutsQuestion> = {
       "Six cards are face up and one is still to come. Count the cards that get you to the hand named, and count them exactly — every answer here is checked against all 46, not estimated.",
     startLabel: "Deal",
     hint: "Keys 1 – 4. A wrong answer costs two seconds.",
+    learnHref: "/learn/outs",
     titleClassName: "mt-4 font-display text-6xl font-light tracking-wing text-rare",
     ornament: (
       <div className="spotlight mb-10">

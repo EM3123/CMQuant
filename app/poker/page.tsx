@@ -8,24 +8,28 @@ const TABLES = [
     name: "Pot Odds",
     line: "Break-even probability from a pot and a bet.",
     href: "/g/pot-odds",
+    learn: "/learn/pot-odds",
     status: "Open",
   },
   {
     name: "Outs",
     line: "Count the cards that still save the hand.",
     href: "/g/outs",
+    learn: "/learn/outs",
     status: "Open",
   },
   {
     name: "Equity",
     line: "Run the hand out, ten thousand times.",
     href: null,
+    learn: null,
     status: "Phase 2",
   },
   {
     name: "Combinatorics",
     line: "How many ways a range can contain it.",
     href: null,
+    learn: null,
     status: "Phase 2",
   },
 ];
@@ -119,6 +123,14 @@ export default function PokerPage() {
             return (
               <div key={table.name}>
                 {table.href ? <Link href={table.href}>{row}</Link> : row}
+                {table.learn && (
+                  <Link
+                    href={table.learn}
+                    className="-mt-3 mb-4 inline-block text-[10px] uppercase tracking-[0.3em] text-secondary underline underline-offset-4 transition-colors hover:text-rare"
+                  >
+                    Learn
+                  </Link>
+                )}
                 <div className="rule-x" />
               </div>
             );

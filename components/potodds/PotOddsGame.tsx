@@ -6,6 +6,8 @@ import {
   validate,
   score,
   formatPercent,
+  MISTAKE_LABEL,
+  MISTAKE_FIX,
   ROUND_MS,
   WRONG_PENALTY_MS,
 } from "@/lib/games/potodds";
@@ -34,6 +36,7 @@ type RunState = {
   points: number;
   endsAt: number;
   shownAt: number;
+  mistakes: Record<string, { label: string; fix: string; count: number }>;
   feedback: { id: number; ok: boolean; chosen: number } | null;
 };
 
@@ -48,6 +51,7 @@ const EMPTY: RunState = {
   points: 0,
   endsAt: 0,
   shownAt: 0,
+  mistakes: {},
   feedback: null,
 };
 
@@ -76,10 +80,26 @@ function reducer(state: RunState, action: Action): RunState {
       const endsAt = ok ? state.endsAt : state.endsAt - WRONG_PENALTY_MS;
       const streak = ok ? state.streak + 1 : 0;
 
+      // Name the error rather than only marking it wrong. Every distractor in
+      // this game is a mistake somebody actually makes at a table.
+      let mistakes = state.mistakes;
+      const kind = ok ? null : question.diagnoses[action.chosen];
+      if (kind) {
+        mistakes = {
+          ...mistakes,
+          [kind]: {
+            label: MISTAKE_LABEL[kind],
+            fix: MISTAKE_FIX[kind],
+            count: (mistakes[kind]?.count ?? 0) + 1,
+          },
+        };
+      }
+
       const next: RunState = {
         ...state,
         index: state.index + 1,
         attempted: state.attempted + 1,
+        mistakes,
         correct: state.correct + (ok ? 1 : 0),
         streak,
         bestStreak: Math.max(state.bestStreak, streak),
@@ -190,6 +210,7 @@ export function PotOddsGame() {
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        mistakes={run.mistakes}
         onReplay={start}
       />
     );
@@ -243,6 +264,12 @@ export function PotOddsGame() {
         <p className="mt-5 text-[11px] text-muted">
           Keys 1 – 4. Space to deal. A wrong answer costs two seconds.
         </p>
+        <a
+          href="/learn/pot-odds"
+          className="mt-6 text-[11px] uppercase tracking-[0.3em] text-secondary underline underline-offset-4 transition-colors hover:text-rare"
+        >
+          How this works
+        </a>
       </div>
     );
   }

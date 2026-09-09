@@ -27,6 +27,7 @@ export function ResultsCard({
   personalBest,
   isPersonalBest,
   challengeTarget,
+  mistakes,
   onReplay,
 }: {
   gameName: string;
@@ -44,6 +45,8 @@ export function ResultsCard({
   personalBest: number;
   isPersonalBest: boolean;
   challengeTarget: number;
+  /** Named errors from this run, if the game can name them. */
+  mistakes?: Record<string, { label: string; fix: string; count: number }>;
   onReplay: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -166,10 +169,49 @@ export function ResultsCard({
         </button>
       </div>
 
+      {/* Deliberately outside the card. The card is the screenshot; this is
+          the part that is worth reading once, here, and never again. */}
+      <MistakeReview mistakes={mistakes} />
+
       <p className="max-w-xs text-center text-[11px] leading-relaxed text-muted">
         The link carries this seed. Whoever opens it gets the same questions in
         the same order.
       </p>
+    </div>
+  );
+}
+
+/**
+ * What went wrong, and why - built from the distractors the player actually
+ * picked. Every one of them is a real error rather than an arbitrary number,
+ * which is what makes this worth showing at all.
+ */
+function MistakeReview({
+  mistakes,
+}: {
+  mistakes?: Record<string, { label: string; fix: string; count: number }>;
+}) {
+  const entries = Object.entries(mistakes ?? {}).sort((a, b) => b[1].count - a[1].count);
+  if (!entries.length) return null;
+
+  return (
+    <div className="w-full max-w-md rounded-panel border border-hairline px-6 py-5">
+      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
+        What went wrong
+      </span>
+      <ul className="mt-4 space-y-4">
+        {entries.map(([key, m]) => (
+          <li key={key}>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm text-primary">{m.label}</span>
+              <span className="tabular shrink-0 text-xs text-data-neg">
+                {m.count}×
+              </span>
+            </div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-secondary">{m.fix}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

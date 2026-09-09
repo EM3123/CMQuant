@@ -11,11 +11,35 @@
 
 import { createRng, randInt, ramp, clampDifficulty, type Rng } from "@/lib/rng";
 
+/**
+ * Which mistake an option represents. The generator already builds distractors
+ * out of real errors; keeping the label means a wrong answer can say which
+ * error it was instead of only that there was one.
+ */
+export type PotOddsMistake = "forgot-call" | "raw-ratio" | "double-counted" | null;
+
+export const MISTAKE_LABEL: Record<Exclude<PotOddsMistake, null>, string> = {
+  "forgot-call": "Left your own call out of the pot",
+  "raw-ratio": "Used the raw bet-to-pot ratio",
+  "double-counted": "Counted your call twice",
+};
+
+export const MISTAKE_FIX: Record<Exclude<PotOddsMistake, null>, string> = {
+  "forgot-call":
+    "The pot you are trying to win already contains the chips you are about to put in. Divide by pot + their bet + your call.",
+  "raw-ratio":
+    "Bet divided by pot is the price in pot-sized terms, not a probability. The denominator has to be the whole pot after the call.",
+  "double-counted":
+    "Your call goes in once. The denominator is pot + bet + call, not pot + bet + call + call.",
+};
+
 export type PotOddsQuestion = {
   pot: number;
   bet: number;
   /** Fractions in 0..1, ascending, so the row reads as a scale. */
   options: number[];
+  /** Aligned with options. Null where an option is just a near miss. */
+  diagnoses: PotOddsMistake[];
   answerIndex: number;
   difficulty: number;
 };
@@ -105,38 +129,58 @@ export function generate(seed: string, difficulty: number): PotOddsQuestion {
     if (maxBelow < 0) continue;
     const belowCount = randInt(rng, 0, maxBelow);
 
-    const chosen: number[] = [answer];
-    const accept = (value: number): boolean => {
+    const chosen: { value: number; mistake: PotOddsMistake }[] = [
+      { value: answer, mistake: null },
+    ];
+    const accept = (value: number, mistake: PotOddsMistake): boolean => {
       if (!plausible(value)) return false;
       for (const existing of chosen) {
-        if (Math.abs(existing - value) < gap) return false;
+        if (Math.abs(existing.value - value) < gap) return false;
       }
-      chosen.push(value);
+      chosen.push({ value, mistake });
       return true;
     };
 
-    const fill = (count: number, direction: -1 | 1, structural: number[]): boolean => {
+    const fill = (
+      count: number,
+      direction: -1 | 1,
+      structural: { value: number; mistake: PotOddsMistake }[]
+    ): boolean => {
       let need = count;
-      for (const value of shuffled(rng, structural)) {
+      for (const candidate of shuffled(rng, structural)) {
         if (need === 0) break;
-        if (Math.sign(value - answer) === direction && accept(value)) need--;
+        if (
+          Math.sign(candidate.value - answer) === direction &&
+          accept(candidate.value, candidate.mistake)
+        ) {
+          need--;
+        }
       }
       for (let guard = 0; need > 0 && guard < 60; guard++) {
         const offset = gap * (1 + rng() * 2.2);
-        if (accept(answer + direction * offset)) need--;
+        if (accept(answer + direction * offset, null)) need--;
       }
       return need === 0;
     };
 
-    if (!fill(belowCount, -1, [doubleCounted(pot, bet)])) continue;
-    if (!fill(3 - belowCount, 1, [forgotOwnCall(pot, bet), rawRatio(pot, bet)])) continue;
+    const below = [
+      { value: doubleCounted(pot, bet), mistake: "double-counted" as const },
+    ];
+    const above = [
+      { value: forgotOwnCall(pot, bet), mistake: "forgot-call" as const },
+      { value: rawRatio(pot, bet), mistake: "raw-ratio" as const },
+    ];
 
-    const sorted = [...chosen].sort((a, b) => a - b);
+    if (!fill(belowCount, -1, below)) continue;
+    if (!fill(3 - belowCount, 1, above)) continue;
+
+    const sorted = [...chosen].sort((a, b) => a.value - b.value);
     return {
       pot,
       bet,
-      options: sorted,
-      answerIndex: sorted.indexOf(answer),
+      options: sorted.map((o) => o.value),
+      diagnoses: sorted.map((o) => o.mistake),
+      answerIndex: sorted.findIndex((o) => o.value === answer),
       difficulty: d,
     };
   }

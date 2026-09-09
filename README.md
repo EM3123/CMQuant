@@ -180,6 +180,22 @@ count in every category against the published table. All nine match exactly.
 If a game ever needs to rank one hand against another — Equity, Blockers — stop
 and pull a library rather than extending this.
 
+## Teaching
+
+Each poker game has an explainer at `/learn/<topic>`, linked from the game's
+intro screen and from the Poker Lab index. They are worked examples rather than
+prose: the arithmetic is laid out step by step, and the two pages cross-link
+because pot odds give you the price and outs tell you whether you can pay it.
+
+The more useful half is in the games themselves. Every distractor is built from
+a named mistake — forgetting your own call, using the raw bet-to-pot ratio,
+reaching for a memorised out count that belongs to a different board — and the
+generator keeps the label. When a run ends, the results screen says which errors
+you actually made and how to fix each one, rather than only that you missed.
+
+Adding this to a game means two things: label the distractors in the generator,
+and give the `ChoiceGame` a `diagnose` function. `ChoiceRun` tallies the rest.
+
 ## Ads
 
 Not running, and not recommended yet. The slots exist behind a flag so turning
