@@ -1,7 +1,7 @@
 # CMQuant
 
 **CM stands for Computational Mathematics.** Short, timed, procedurally generated
-games for mental arithmetic, estimation and probability. Seven games are playable;
+games for mental arithmetic, estimation and probability. Eight games are playable;
 the poker wing teaches the same quantitative skills through simulated cards and
 carries no money, wagering or prizes of any kind.
 
@@ -206,9 +206,16 @@ policy.
 
 ## Where this is going
 
-Seven games are live and the daily is running. Next is the campus leaderboard
-gated on `@andrew.cmu.edu`, then Equity — which is the point where the
-categoriser is not enough and a real evaluator comes off npm.
+Eight games are live and the daily is running. Next is the campus leaderboard
+gated on `@andrew.cmu.edu`, then Equity.
+
+Equity is the one that needs a decision first. Every poker game so far has
+avoided ranking one hand against another: Outs asks which category you reach,
+Combinatorics counts cards and never evaluates anything. Equity cannot dodge
+it — running a hand out means deciding who won. That is the comparison
+function the spec warns against writing by hand, so it is either a library off
+npm or an extension of `lib/poker/hand.ts` verified against the 7,462 distinct
+five-card hand values.
 
 The moment a subscription launches, this stops being a personal project under
 Vercel's fair-use terms and has to move to a paid plan.

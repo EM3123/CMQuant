@@ -27,10 +27,10 @@ const TABLES = [
   },
   {
     name: "Combinatorics",
-    line: "How many ways a range can contain it.",
-    href: null,
-    learn: null,
-    status: "Phase 2",
+    line: "How many ways a hand can still be dealt.",
+    href: "/g/combinatorics",
+    learn: "/learn/combinatorics",
+    status: "Open",
   },
 ];
 
