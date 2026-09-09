@@ -340,3 +340,13 @@ body {
 @utility rise-away {
   animation: wing-rise 620ms var(--ease-wing) forwards;
 }
+
+/* --------------------------------------------------------------------------
+   8. Challenge links
+   A URL carrying a seed is somebody answering a challenge. They want the
+   question, not an introduction, so the landing hero is removed before first
+   paint rather than scrolled past. Set by the inline script in ChallengeJump.
+   -------------------------------------------------------------------------- */
+:root[data-challenge] [data-hero] {
+  display: none;
+}

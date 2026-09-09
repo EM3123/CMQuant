@@ -15,10 +15,14 @@ export function Wing({
   wing,
   children,
   className = "",
+  scroll = false,
 }: {
   wing: WingName;
   children: ReactNode;
   className?: string;
+  /** COMP only. Opts out of the fixed canvas for pages that are meant to
+   *  scroll, like the landing page. */
+  scroll?: boolean;
 }) {
   if (wing === "poker") {
     return (
@@ -34,7 +38,9 @@ export function Wing({
   return (
     <div
       data-wing="comp"
-      className={`wing-grid flex h-dvh flex-col overflow-hidden bg-surface text-primary ${className}`}
+      className={`wing-grid flex flex-col bg-surface text-primary ${
+        scroll ? "min-h-dvh" : "h-dvh overflow-hidden"
+      } ${className}`}
     >
       {children}
     </div>

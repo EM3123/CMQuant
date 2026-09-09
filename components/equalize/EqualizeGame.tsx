@@ -103,7 +103,7 @@ function reducer(state: RunState, action: Action): RunState {
   }
 }
 
-export function EqualizeGame() {
+export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } = {}) {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
@@ -162,9 +162,10 @@ export function EqualizeGame() {
         start();
       }
     }
+    if (!keysEnabled) return;
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [run.phase, answer, start]);
+  }, [run.phase, answer, start, keysEnabled]);
 
   const question = useMemo(
     () => (run.phase === "running" ? questionAt(run.seed, run.index) : null),
