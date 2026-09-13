@@ -14,6 +14,7 @@ import {
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import { Rail, Tape } from "@/components/game/Rail";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -39,6 +40,8 @@ type RunState = {
   shownAt: number;
   mistakes: Record<string, { label: string; fix: string; count: number }>;
   feedback: { id: number; ok: boolean; chosen: number } | null;
+  /** The tape. Every answer with how long it took, oldest first. */
+  tape: { id: number; ok: boolean; ms: number }[];
 };
 
 const EMPTY: RunState = {
@@ -52,6 +55,7 @@ const EMPTY: RunState = {
   points: 0,
   endsAt: 0,
   shownAt: 0,
+  tape: [],
   mistakes: {},
   feedback: null,
 };
@@ -112,6 +116,7 @@ function reducer(state: RunState, action: Action): RunState {
         endsAt,
         shownAt: action.now,
         feedback: { id: state.index, ok, chosen: action.chosen },
+        tape: [...state.tape, { id: state.index, ok, ms: elapsed }],
       };
 
       return endsAt <= action.now ? { ...next, phase: "done" } : next;
@@ -274,6 +279,10 @@ export function PotOddsGame() {
     );
   }
 
+  const accuracy = run.attempted
+    ? Math.round((run.correct / run.attempted) * 100)
+    : 0;
+
   return (
     <div className="relative flex flex-1 flex-col">
       {run.feedback && (
@@ -283,43 +292,50 @@ export function PotOddsGame() {
         />
       )}
 
-      <header className="flex shrink-0 items-center justify-between px-5 py-3">
-        <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
-            Pot Odds
-          </span>
-          <span className="tabular text-[10px] text-muted">
-            d{String(question?.difficulty ?? 1).padStart(2, "0")}
-          </span>
-        </div>
-        <div className="flex items-center gap-6">
-          <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat label="Streak" value={String(run.streak)} tone={run.streak >= 5 ? "rare" : undefined} />
-          {challenge && challenge.target > 0 && (
-            <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
-          )}
-        </div>
-      </header>
+      {/* The clock lives in the rail, not above the table.
+          It was a numeral stacked on top of the felt, and once the felt got
+          a rail and chips the whole column grew past the viewport - so the
+          first thing to scroll out of sight was the timer, in a game that is
+          entirely about a timer. A fixed rail cannot do that. */}
+      <Rail
+        code="POT"
+        remainingMs={remaining}
+        totalMs={ROUND_MS}
+        penalty={
+          run.feedback && !run.feedback.ok
+            ? { id: run.feedback.id, label: `−${Math.round(WRONG_PENALTY_MS / 1000)}s` }
+            : null
+        }
+        cells={[
+          { label: "Diff", value: `d${String(question?.difficulty ?? 1).padStart(2, "0")}` },
+          { label: "Q", value: String(run.index + 1) },
+          { label: "Score", value: run.points.toLocaleString() },
+          {
+            label: "Streak",
+            value: String(run.streak),
+            tone: run.streak >= 5 ? "pos" : undefined,
+          },
+          {
+            label: "Acc",
+            value: run.attempted ? `${accuracy}%` : "—",
+            tone: run.attempted && accuracy < 70 ? "neg" : undefined,
+          },
+          ...(challenge && challenge.target > 0
+            ? [
+                {
+                  label: "Target",
+                  value: challenge.target.toLocaleString(),
+                  tone: "accent" as const,
+                },
+              ]
+            : []),
+        ]}
+      />
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-4 pb-6">
-        <div className="relative flex flex-col items-center">
-          <span className="tabular text-4xl leading-none text-primary sm:text-5xl">
-            {formatClock(remaining)}
-          </span>
-          {run.feedback && !run.feedback.ok && (
-            <span
-              key={run.feedback.id}
-              className="rise-away tabular absolute -right-14 top-1 text-xl text-data-neg"
-            >
-              −2s
-            </span>
-          )}
-        </div>
-
-        {/* The spot, on a table.
-            The pot after the call is deliberately NOT shown anywhere. Building
-            that denominator - remembering that your own call belongs in it - is
-            the entire skill, and printing it would answer the question. */}
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-4 py-4">
+        {/* The pot after the call is deliberately NOT shown anywhere. Building
+            that denominator - remembering that your own call belongs in it -
+            is the entire skill, and printing it would answer the question. */}
         <Felt
           board={table.slice(2)}
           hero={table.slice(0, 2)}
@@ -327,19 +343,21 @@ export function PotOddsGame() {
           bet={question!.bet}
         />
 
-        <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
+        <p className="max-w-sm text-center text-[13px] leading-relaxed text-secondary">
           How often do you need to win for that call to break even?
         </p>
 
-        <div className="grid w-full max-w-2xl grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="grid w-full max-w-2xl grid-cols-2 gap-px bg-hairline sm:grid-cols-4">
           {question!.options.map((option, i) => (
             <button
               key={i}
               onClick={() => answer(i)}
-              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-4 transition-colors hover:border-rare"
+              className="group relative flex flex-col items-center gap-1 bg-surface px-3 py-3 transition-colors hover:bg-accent/10"
             >
-              <span className="tabular text-2xl text-primary">{formatPercent(option)}</span>
-              <kbd className="tabular rounded-control border border-accent/40 bg-accent/10 px-2 text-[10px] text-accent-ink">
+              <span className="tabular text-xl text-primary transition-colors group-hover:text-accent-ink">
+                {formatPercent(option)}
+              </span>
+              <kbd className="tabular absolute right-1 top-1 text-[9px] text-muted">
                 {i + 1}
               </kbd>
             </button>
@@ -347,37 +365,10 @@ export function PotOddsGame() {
         </div>
       </div>
 
-      <footer className="shrink-0 px-5 py-2 text-center text-[10px] text-muted">
-        Your call goes into the pot you are trying to win.
-      </footer>
-    </div>
-  );
-}
-
-function formatClock(ms: number): string {
-  const seconds = ms / 1000;
-  if (seconds <= 10) return (Math.ceil(ms / 100) / 10).toFixed(1);
-  const total = Math.ceil(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-/** One row of the spot. Label left, number right, tabular so the columns of
- *  digits line up between rows and between questions. */
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "rare" | "accent";
-}) {
-  const colour =
-    tone === "rare" ? "text-rare" : tone === "accent" ? "text-accent-ink" : "text-primary";
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">{label}</span>
-      <span className={`tabular text-sm ${colour}`}>{value}</span>
+      <Tape
+        entries={run.tape}
+        hint="Your call goes into the pot you are trying to win."
+      />
     </div>
   );
 }
