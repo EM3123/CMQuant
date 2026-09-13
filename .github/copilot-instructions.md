@@ -34,8 +34,10 @@ Motion (`motion@13`) is installed. The full guide is
   is the product. Motion goes on the surfaces around the game — landing, wing
   indexes, learn pages, intro screens, the results card — never inside a live
   round.
-- **If CSS already does it, CSS keeps doing it.** The dragon drift, club light
-  beams, round flash and score rise are keyframes in `globals.css`.
+- **If CSS already does it, CSS keeps doing it.** The dragon drift, round flash
+  and score rise are keyframes in `globals.css`. Anything with fixed delays and
+  no interaction belongs there: a JavaScript animation runs off the frame loop,
+  so a page mounting in a throttled tab can leave it queued and never ticked.
 - **`prefers-reduced-motion` does not reach Motion.** The clamp in
   `globals.css` covers CSS only, so every Motion component calls
   `useReducedMotion()` and passes `initial={false}` when it is set.

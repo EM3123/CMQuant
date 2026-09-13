@@ -25,21 +25,20 @@ export function Wing({
    *  scroll, like the landing page. */
   scroll?: boolean;
 }) {
-  // `isolate` on both roots matters more than it looks. The atmosphere layers
-  // are positioned, and a positioned element paints above its static siblings
-  // no matter what order they are written in - so they need a negative z-index,
-  // and a negative z-index needs a stacking context to stay inside or it slides
+  // `isolate` on the COMP root matters more than it looks. The dragon layer is
+  // positioned, and a positioned element paints above its static siblings no
+  // matter what order they are written in - so it needs a negative z-index, and
+  // a negative z-index needs a stacking context to stay inside or it slides
   // behind the page background and disappears.
+  //
+  // POKER has no such layer any more. Its atmosphere is a background-image on
+  // the root itself, which is what a grid should have been all along.
   if (wing === "poker") {
     return (
       <div
         data-wing="poker"
         className={`wing-ambient relative isolate min-h-dvh overflow-hidden bg-surface text-primary ${className}`}
       >
-        <div className="club-beams" aria-hidden>
-          <div className="club-beam-a" />
-          <div className="club-beam-b" />
-        </div>
         {children}
       </div>
     );

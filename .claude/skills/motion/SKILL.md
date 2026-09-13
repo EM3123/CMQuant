@@ -35,9 +35,16 @@ So Motion belongs on the surfaces around the game, never inside it:
 | Memory Tiles reveal phases | **No** | Its timing is the puzzle |
 
 Second rule: **if CSS can already do it, CSS does it.** `globals.css` animates
-the dragon drift, the club light beams, the round flash and the score rise with
-keyframes. Those cost no JavaScript and are already covered by the global
-`prefers-reduced-motion` clamp. Do not port them to Motion.
+the dragon drift, the round flash and the score rise with keyframes. Those cost
+no JavaScript and are already covered by the global `prefers-reduced-motion`
+clamp. Do not port them to Motion.
+
+This rule has teeth. A staggered card deal was built with Motion and it broke
+twice: a JavaScript animation runs off the frame loop, so a page mounting in a
+throttled or hidden tab can leave the animation queued and never ticked, and
+the thing you were animating in never appears at all. A CSS animation resolves
+off the document timeline and `animation-fill-mode: both` holds the last frame.
+**Anything with fixed delays and no interaction belongs in CSS.**
 
 ## Accessibility
 

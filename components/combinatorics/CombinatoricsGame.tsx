@@ -58,11 +58,10 @@ const COMBINATORICS: ChoiceGame<CombinatoricsQuestion> = {
     startLabel: "Deal",
     hint: "Keys 1 – 4. A wrong answer costs two seconds.",
     learnHref: "/learn/combinatorics",
-    titleClassName: "mt-4 font-display text-5xl font-light tracking-wing text-rare sm:text-6xl",
+    titleClassName: "mt-4 font-display text-3xl font-medium uppercase tracking-wing text-primary sm:text-4xl",
     ornament: (
-      <div className="spotlight mb-10">
-        <div className="spotlight-glow" />
-        <CardFan cards={["Ah", "As", null, null]} size="lg" className="justify-center" />
+      <div className="mb-10">
+        <CardFan cards={["Ah", "As", null, null]} size="md" className="justify-center" />
       </div>
     ),
   },

@@ -219,15 +219,14 @@ export function PotOddsGame() {
   if (run.phase === "idle") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="spotlight">
-          <div className="spotlight-glow" />
-          <CardFan cards={["As", "Kd", null, null]} size="lg" className="justify-center" />
+        <div>
+          <CardFan cards={["As", "Kd", null, null]} size="md" className="justify-center" />
         </div>
 
         <span className="mt-12 text-[10px] uppercase tracking-[0.3em] text-secondary">
           Poker Lab / Probability in Practice
         </span>
-        <h1 className="mt-4 font-display text-6xl font-light tracking-wing text-rare">
+        <h1 className="mt-4 font-display text-3xl font-medium uppercase tracking-wing text-primary sm:text-4xl">
           Pot Odds
         </h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">

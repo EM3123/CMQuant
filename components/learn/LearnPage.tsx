@@ -43,7 +43,7 @@ export function LearnPage({
           <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
             {eyebrow}
           </span>
-          <h1 className="mt-4 font-display text-5xl font-light tracking-wing text-rare sm:text-6xl">
+          <h1 className="mt-4 font-display text-3xl font-medium uppercase tracking-wing text-primary sm:text-4xl">
             {title}
           </h1>
           <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-secondary">
@@ -73,7 +73,7 @@ export function LearnPage({
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="font-display text-2xl font-light tracking-wing text-primary">
+      <h2 className="font-display text-base font-medium uppercase tracking-wing text-rare">
         {title}
       </h2>
       {children}
