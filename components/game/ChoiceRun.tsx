@@ -372,7 +372,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         ]}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-3">
         {game.renderPrompt(question!)}
 
         <div className={game.optionsClassName}>

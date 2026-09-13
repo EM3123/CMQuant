@@ -7,7 +7,7 @@ import { Wordmark } from "@/components/site/Wordmark";
 export default function PotOddsPage() {
   return (
     <Wing wing="poker">
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         <nav className="flex shrink-0 items-center justify-between px-5 py-3">
           <Wordmark />
           <Link

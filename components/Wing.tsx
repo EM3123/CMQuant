@@ -22,8 +22,15 @@ export function Wing({
   wing: WingName;
   children: ReactNode;
   className?: string;
-  /** COMP only. Opts out of the fixed canvas for pages that are meant to
-   *  scroll, like the landing page. */
+  /**
+   * Opts out of the fixed canvas for pages that are meant to scroll - the
+   * landing page, the wing indexes, the explainers.
+   *
+   * Game routes leave this off, and that is load-bearing rather than
+   * cosmetic: on a fixed canvas the status rail physically cannot leave the
+   * screen. Pot Odds shipped as a growing page and the clock scrolled out of
+   * sight behind a tall poker table, in a game that is entirely about a clock.
+   */
   scroll?: boolean;
   /**
    * COMP only. `engraved` is the line-art dragon field that textures the
@@ -41,11 +48,20 @@ export function Wing({
   //
   // POKER has no such layer any more. Its atmosphere is a background-image on
   // the root itself, which is what a grid should have been all along.
+  //
+  // `overflow-clip`, not `overflow-hidden`. A hidden box is still a scroll
+  // container - it just has no scrollbar - so the browser will happily scroll
+  // it to chase focus. Clicking Deal focused a button, the run replaced it, and
+  // the browser scrolled the root by 124px to keep the vanished element in
+  // view, taking the status rail off the top of the screen with it. A clipped
+  // box is not a scroll container and cannot be scrolled by anything.
   if (wing === "poker") {
     return (
       <div
         data-wing="poker"
-        className={`wing-ambient relative isolate min-h-dvh overflow-hidden bg-surface text-primary ${className}`}
+        className={`wing-ambient relative isolate flex flex-col overflow-clip bg-surface text-primary ${
+          scroll ? "min-h-dvh" : "h-dvh"
+        } ${className}`}
       >
         {children}
       </div>
@@ -56,7 +72,7 @@ export function Wing({
     <div
       data-wing="comp"
       className={`wing-grid relative isolate flex flex-col bg-surface text-primary ${
-        scroll ? "min-h-dvh" : "h-dvh overflow-hidden"
+        scroll ? "min-h-dvh" : "h-dvh overflow-clip"
       } ${className}`}
     >
       {wallpaper === "engraved" && <DragonField />}

@@ -332,7 +332,7 @@ export function PotOddsGame() {
         ]}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto px-4 py-3">
         {/* The pot after the call is deliberately NOT shown anywhere. Building
             that denominator - remembering that your own call belongs in it -
             is the entire skill, and printing it would answer the question. */}

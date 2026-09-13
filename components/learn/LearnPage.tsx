@@ -27,7 +27,7 @@ export function LearnPage({
   children: ReactNode;
 }) {
   return (
-    <Wing wing="poker">
+    <Wing wing="poker" scroll>
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-6 py-10">
         <nav className="flex shrink-0 items-center justify-between">
           <Wordmark />

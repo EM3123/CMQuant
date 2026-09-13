@@ -32,7 +32,7 @@ export function Rail({
   const urgent = remainingMs <= 10_000;
 
   return (
-    <header className="relative shrink-0 border-b border-hairline">
+    <header className="sticky top-0 z-30 shrink-0 border-b border-hairline bg-surface">
       <div className="flex items-stretch divide-x divide-hairline">
         <div className="flex items-center gap-2 px-3 py-1.5">
           <span className="tabular text-[11px] tracking-[0.18em] text-accent-ink">

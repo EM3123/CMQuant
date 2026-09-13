@@ -50,7 +50,7 @@ export function Felt({
             below the size anyone consciously sees and above the size that
             disappears. */}
         <div
-          className="relative rounded-[46%/38%] px-4 py-7 sm:px-10 sm:py-10"
+          className="relative rounded-[46%/38%] px-4 py-5 sm:px-10 sm:py-6"
           style={{
             backgroundImage: [
               "radial-gradient(62% 74% at 50% 30%, rgba(31,92,60,0.42) 0%, rgba(9,26,17,0.9) 58%, rgba(4,10,7,1) 100%)",
@@ -66,13 +66,13 @@ export function Felt({
             className="pointer-events-none absolute inset-x-[12%] top-[14%] h-[62%] rounded-[50%] border border-white/[0.045]"
           />
 
-          <div className="relative flex flex-col items-center gap-5">
+          <div className="relative flex flex-col items-center gap-3">
             {typeof pot === "number" && (
               <div className="flex flex-col items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-[0.3em] text-white/40">
                   Pot
                 </span>
-                <ChipPile amount={pot} size={30} />
+                <ChipPile amount={pot} size={24} />
                 <span className="tabular text-base text-white/90">
                   {pot.toLocaleString()}
                 </span>
@@ -81,13 +81,13 @@ export function Felt({
 
             <div className="flex items-end gap-1.5 sm:gap-2">
               {board.map((code, i) => (
-                <PlayingCard key={`${code}-${i}`} code={code} size="md" />
+                <PlayingCard key={`${code}-${i}`} code={code} size="sm" />
               ))}
             </div>
 
             {typeof bet === "number" && (
               <div className="flex flex-col items-center gap-1.5">
-                <ChipPile amount={bet} size={26} />
+                <ChipPile amount={bet} size={21} />
                 <span className="text-[9px] uppercase tracking-[0.3em] text-accent-ink">
                   {betLabel} <span className="tabular">{bet.toLocaleString()}</span>
                 </span>
@@ -102,13 +102,13 @@ export function Felt({
       {/* Your cards, overlapping the near rail. Sitting them ON the edge is
           what says "these are in front of you" without a label. */}
       {hero && hero.length > 0 && (
-        <div className="-mt-6 flex items-end justify-center gap-1.5 sm:-mt-7">
+        <div className="-mt-5 flex items-end justify-center gap-1.5">
           <div className="flex items-end gap-1">
             {hero.map((code, i) => (
               <PlayingCard
                 key={`${code}-${i}`}
                 code={code}
-                size="md"
+                size="sm"
                 rotate={i === 0 ? -6 : 6}
                 lift={i === 0 ? 3 : 0}
               />
