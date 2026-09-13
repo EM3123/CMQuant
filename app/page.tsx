@@ -4,6 +4,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Founder } from "@/components/site/Founder";
 import { PlaySection } from "@/components/site/PlaySection";
 import { ChallengeJump } from "@/components/site/ChallengeJump";
+import { ScrollProgress } from "@/components/site/ScrollProgress";
+import { Reveal, RevealList, RevealItem } from "@/components/site/Reveal";
 import { BestCell } from "@/components/game/BestCell";
 
 /**
@@ -78,6 +80,7 @@ export default function Home() {
   return (
     <Wing wing="comp" scroll>
       <ChallengeJump />
+      <ScrollProgress />
 
       <nav className="sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-hairline bg-surface/85 px-4 py-2 backdrop-blur-md">
         <span className="text-sm font-medium tracking-tight">CMQuant</span>
@@ -113,7 +116,7 @@ export default function Home() {
           played to somebody else and find out who is faster.
         </p>
 
-        <div className="mt-16 flex items-start gap-12 sm:gap-20">
+        <Reveal delay={0.15} className="mt-16 flex items-start gap-12 sm:gap-20">
           <Founder
             name="Edmund Michalski"
             role="Runtime, design system, daily"
@@ -126,7 +129,7 @@ export default function Home() {
             linkedin="https://www.linkedin.com/in/cameron-jiang-247b60391/"
             photo="/team/cameron.jpg"
           />
-        </div>
+        </Reveal>
 
         <a
           href="#play"
@@ -171,31 +174,35 @@ export default function Home() {
               <span className="text-right">Wing</span>
             </div>
 
-            {GAMES.map((game) => (
-              <Link key={game.id} href={game.href} className="block">
-                <div className="group grid grid-cols-[1fr_3.5rem_5rem] items-baseline gap-x-3 border-b border-hairline py-3 hover:bg-white/[0.03] sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
-                  <span className="tabular hidden text-muted sm:block">{game.id}</span>
-                  <span>
-                    <span className="text-primary transition-colors group-hover:text-accent-ink">
-                      {game.name}
-                    </span>
-                    <span className="mt-0.5 block text-muted sm:ml-3 sm:mt-0 sm:inline">
-                      {game.skill}
-                    </span>
-                  </span>
-                  <span className="text-right text-primary">
-                    <BestCell storageKey={game.storageKey} />
-                  </span>
-                  <span
-                    className={`text-right ${
-                      game.wing === "Poker Lab" ? "text-rare" : "text-muted"
-                    }`}
-                  >
-                    {game.wing}
-                  </span>
-                </div>
-              </Link>
-            ))}
+            <RevealList>
+              {GAMES.map((game) => (
+                <RevealItem key={game.id}>
+                  <Link href={game.href} className="block">
+                    <div className="group grid grid-cols-[1fr_3.5rem_5rem] items-baseline gap-x-3 border-b border-hairline py-3 hover:bg-white/[0.03] sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
+                      <span className="tabular hidden text-muted sm:block">{game.id}</span>
+                      <span>
+                        <span className="text-primary transition-colors group-hover:text-accent-ink">
+                          {game.name}
+                        </span>
+                        <span className="mt-0.5 block text-muted sm:ml-3 sm:mt-0 sm:inline">
+                          {game.skill}
+                        </span>
+                      </span>
+                      <span className="text-right text-primary">
+                        <BestCell storageKey={game.storageKey} />
+                      </span>
+                      <span
+                        className={`text-right ${
+                          game.wing === "Poker Lab" ? "text-rare" : "text-muted"
+                        }`}
+                      >
+                        {game.wing}
+                      </span>
+                    </div>
+                  </Link>
+                </RevealItem>
+              ))}
+            </RevealList>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">

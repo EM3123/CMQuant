@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
 
 /**
@@ -13,6 +14,10 @@ import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
  *
  * Shared across games and across wings. It names no colours, so the poker room
  * and the workbench each render it in their own palette without a second copy.
+ *
+ * This is the one screen in a game that is allowed to animate. The run is
+ * over, nobody is on a clock, and the card arriving rather than appearing is
+ * what makes it feel like a result instead of a state change.
  */
 export function ResultsCard({
   gameName,
@@ -50,6 +55,7 @@ export function ResultsCard({
   onReplay: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const reduce = useReducedMotion();
   const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
 
   // Every game ends here, so this is the one place that has to know a run
@@ -85,7 +91,12 @@ export function ResultsCard({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-7 px-4 py-8">
-      <div className="flex aspect-[4/5] w-full max-w-[360px] flex-col rounded-panel border border-hairline-strong bg-surface-sunken px-7 py-8 shadow-panel">
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 22, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+        className="flex aspect-[4/5] w-full max-w-[360px] flex-col rounded-panel border border-hairline-strong bg-surface-sunken px-7 py-8 shadow-panel"
+      >
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-medium tracking-tight text-primary">CMQuant</span>
           <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
@@ -152,9 +163,26 @@ export function ResultsCard({
           <span className="tabular text-[10px] text-muted">{seed}</span>
           <span className="text-[10px] text-muted">cmquant</span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div className="relative flex flex-wrap items-center justify-center gap-3">
+        {/* AnimatePresence earns its place here and almost nowhere else on the
+            site: this is an element React removes from the tree, and CSS
+            cannot animate something that is already gone. */}
+        <AnimatePresence>
+          {copied && (
+            <motion.span
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
+              className="pointer-events-none absolute -top-9 rounded-control border border-hairline-strong bg-surface-raised px-4 py-1.5 text-[10px] uppercase tracking-[0.18em] text-accent-ink"
+            >
+              Link copied
+            </motion.span>
+          )}
+        </AnimatePresence>
+
         <button
           onClick={onReplay}
           className="rounded-control border border-hairline-strong px-7 py-3 text-xs uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
@@ -165,7 +193,7 @@ export function ResultsCard({
           onClick={copyChallenge}
           className="rounded-control border border-hairline px-7 py-3 text-xs uppercase tracking-[0.18em] text-secondary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
-          {copied ? "Link copied" : "Challenge a friend"}
+          Challenge a friend
         </button>
       </div>
 

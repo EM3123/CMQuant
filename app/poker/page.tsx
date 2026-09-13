@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
-import { PlayingCard } from "@/components/cards/PlayingCard";
+import { DealtHand } from "@/components/poker/DealtHand";
 
 const TABLES = [
   {
@@ -74,18 +74,7 @@ export default function PokerPage() {
             {/* Shadow the hand casts onto the felt. */}
             <div className="absolute bottom-8 left-1/2 h-8 w-64 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
 
-            <div className="relative flex items-end">
-              <PlayingCard code="As" size="lg" rotate={-13} lift={10} />
-              <div className="-ml-5">
-                <PlayingCard code="Kd" size="lg" rotate={-4} />
-              </div>
-              <div className="-ml-5">
-                <PlayingCard faceDown size="lg" rotate={5} />
-              </div>
-              <div className="-ml-5">
-                <PlayingCard faceDown size="lg" rotate={14} lift={10} />
-              </div>
-            </div>
+            <DealtHand />
           </div>
 
           <span className="mt-14 text-[10px] uppercase tracking-[0.3em] text-secondary">
