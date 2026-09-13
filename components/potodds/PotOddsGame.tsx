@@ -13,6 +13,7 @@ import {
 } from "@/lib/games/potodds";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
+import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
 import {
@@ -42,6 +43,8 @@ type RunState = {
   feedback: { id: number; ok: boolean; chosen: number } | null;
   /** The tape. Every answer with how long it took, oldest first. */
   tape: { id: number; ok: boolean; ms: number }[];
+  /** Sticky. One assisted answer marks the whole run, and it never unsets. */
+  assisted: boolean;
 };
 
 const EMPTY: RunState = {
@@ -58,11 +61,12 @@ const EMPTY: RunState = {
   tape: [],
   mistakes: {},
   feedback: null,
+  assisted: false,
 };
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "answer"; chosen: number; now: number }
+  | { type: "answer"; chosen: number; now: number; assist: boolean }
   | { type: "finish" };
 
 function reducer(state: RunState, action: Action): RunState {
@@ -80,7 +84,7 @@ function reducer(state: RunState, action: Action): RunState {
       if (state.phase !== "running") return state;
 
       const question = questionAt(state.seed, state.index);
-      const ok = validate(question, action.chosen);
+      const ok = action.assist || validate(question, action.chosen);
       const elapsed = action.now - state.shownAt;
       const endsAt = ok ? state.endsAt : state.endsAt - WRONG_PENALTY_MS;
       const streak = ok ? state.streak + 1 : 0;
@@ -102,6 +106,7 @@ function reducer(state: RunState, action: Action): RunState {
 
       const next: RunState = {
         ...state,
+        assisted: state.assisted || action.assist,
         index: state.index + 1,
         attempted: state.attempted + 1,
         mistakes,
@@ -131,6 +136,7 @@ export function PotOddsGame() {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
+  const assist = useAssist();
   const [best, recordBest] = usePersonalBest("cmquant:potodds:best");
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
@@ -144,9 +150,12 @@ export function PotOddsGame() {
     setNow(Date.now());
   }, [challenge]);
 
-  const answer = useCallback((chosen: number) => {
-    dispatch({ type: "answer", chosen, now: Date.now() });
-  }, []);
+  const answer = useCallback(
+    (chosen: number) => {
+      dispatch({ type: "answer", chosen, now: Date.now(), assist });
+    },
+    [assist]
+  );
 
   useEffect(() => {
     if (run.phase !== "running") return;
@@ -159,8 +168,8 @@ export function PotOddsGame() {
   }, [run.phase, run.endsAt]);
 
   useEffect(() => {
-    if (run.phase === "done") recordBest(runPoints);
-  }, [run.phase, runPoints, recordBest]);
+    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
+  }, [run.phase, run.assisted, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -217,6 +226,7 @@ export function PotOddsGame() {
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
         mistakes={run.mistakes}
+        assisted={run.assisted}
         onReplay={start}
       />
     );
@@ -300,6 +310,7 @@ export function PotOddsGame() {
           first thing to scroll out of sight was the timer, in a game that is
           entirely about a timer. A fixed rail cannot do that. */}
       <Rail
+        assisted={assist}
         code="POT"
         remainingMs={remaining}
         totalMs={ROUND_MS}

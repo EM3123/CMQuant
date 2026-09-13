@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
+import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
 import {
@@ -87,6 +88,8 @@ type RunState = {
   feedback: { id: number; ok: boolean } | null;
   /** The tape. Every answer with how long it took, oldest first. */
   tape: { id: number; ok: boolean; ms: number }[];
+  /** Sticky. One assisted answer marks the whole run, and it never unsets. */
+  assisted: boolean;
 };
 
 const EMPTY: RunState = {
@@ -103,11 +106,12 @@ const EMPTY: RunState = {
   mistakes: {},
   feedback: null,
   tape: [],
+  assisted: false,
 };
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "answer"; chosen: number; now: number }
+  | { type: "answer"; chosen: number; now: number; assist: boolean }
   | { type: "finish" };
 
 function makeReducer<Q>(game: ChoiceGame<Q>) {
@@ -126,7 +130,10 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
         if (state.phase !== "running") return state;
 
         const question = game.questionAt(state.seed, state.index);
-        const ok = game.validate(question, action.chosen);
+        // Assist marks the answer correct AND marks the run, permanently. It
+        // has to be sticky: turning it off halfway through would otherwise
+        // launder an assisted run back into a scoring one.
+        const ok = action.assist || game.validate(question, action.chosen);
         const elapsed = action.now - state.shownAt;
         const endsAt = ok ? state.endsAt : state.endsAt - game.wrongPenaltyMs;
         const streak = ok ? state.streak + 1 : 0;
@@ -156,6 +163,7 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
           mistakes,
           streak,
           bestStreak: Math.max(state.bestStreak, streak),
+          assisted: state.assisted || action.assist,
           points:
             state.points +
             (ok
@@ -181,6 +189,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
+  const assist = useAssist();
   const [best, recordBest] = usePersonalBest(game.storageKey);
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
@@ -194,9 +203,12 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
     setNow(Date.now());
   }, [challenge]);
 
-  const answer = useCallback((chosen: number) => {
-    dispatch({ type: "answer", chosen, now: Date.now() });
-  }, []);
+  const answer = useCallback(
+    (chosen: number) => {
+      dispatch({ type: "answer", chosen, now: Date.now(), assist });
+    },
+    [assist]
+  );
 
   useEffect(() => {
     if (run.phase !== "running") return;
@@ -209,8 +221,9 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
   }, [run.phase, run.endsAt]);
 
   useEffect(() => {
-    if (run.phase === "done") recordBest(runPoints);
-  }, [run.phase, runPoints, recordBest]);
+    // An assisted run never touches the personal best.
+    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
+  }, [run.phase, run.assisted, runPoints, recordBest]);
 
   const question = useMemo(
     () => (run.phase === "running" ? game.questionAt(run.seed, run.index) : null),
@@ -259,6 +272,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
         mistakes={run.mistakes}
+        assisted={run.assisted}
         onReplay={start}
       />
     );
@@ -335,6 +349,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
       )}
 
       <Rail
+        assisted={assist}
         code={game.code}
         remainingMs={remaining}
         totalMs={game.roundMs}

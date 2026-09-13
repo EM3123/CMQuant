@@ -19,6 +19,7 @@ export function Rail({
   remainingMs,
   totalMs,
   penalty,
+  assisted = false,
 }: {
   /** Short game code, e.g. EQZ. */
   code: string;
@@ -27,6 +28,8 @@ export function Rail({
   totalMs: number;
   /** Shown briefly when a wrong answer costs time. Keyed by the caller. */
   penalty?: { id: number; label: string } | null;
+  /** Assist mode is on. Says so, loudly, for as long as it is. */
+  assisted?: boolean;
 }) {
   const left = Math.max(0, Math.min(1, remainingMs / totalMs));
   const urgent = remainingMs <= 10_000;
@@ -39,6 +42,14 @@ export function Rail({
             {code}
           </span>
         </div>
+
+        {assisted && (
+          <div className="flex items-center px-3 py-1.5">
+            <span className="bg-data-neg px-1.5 py-[1px] text-[9px] uppercase tracking-[0.18em] text-black">
+              Assist
+            </span>
+          </div>
+        )}
 
         {cells.map((cell) => (
           <Cell key={cell.label} {...cell} />

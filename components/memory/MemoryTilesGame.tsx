@@ -9,6 +9,7 @@ import {
 } from "@/lib/games/memorytiles";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
+import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import {
   WRONG_POINTS,
@@ -45,6 +46,8 @@ type RunState = {
   /** When the recall phase opened. The show phase must not count against the
    *  player's time, or a slower reveal would score worse for no reason. */
   recallFrom: number;
+  /** Sticky. One assisted answer marks the whole run, and it never unsets. */
+  assisted: boolean;
   feedback: { id: number; ok: boolean } | null;
 };
 
@@ -62,12 +65,13 @@ const EMPTY: RunState = {
   endsAt: 0,
   recallFrom: 0,
   feedback: null,
+  assisted: false,
 };
 
 type Action =
   | { type: "start"; seed: string; now: number }
   | { type: "reveal"; now: number }
-  | { type: "tap"; cell: number; now: number }
+  | { type: "tap"; cell: number; now: number; assist: boolean }
   | { type: "finish" };
 
 function advance(state: RunState, ok: boolean, now: number): RunState {
@@ -116,6 +120,12 @@ function reducer(state: RunState, action: Action): RunState {
       if (state.phase !== "running" || state.step !== "recall") return state;
       const question = questionAt(state.seed, state.index);
 
+      // Assist completes the whole pattern on one tap - marking a single wrong
+      // tile correct would leave the sequence unfinished and stall the round.
+      if (action.assist) {
+        return advance({ ...state, assisted: true }, true, action.now);
+      }
+
       if (!question.tiles.includes(action.cell)) return advance(state, false, action.now);
       if (state.found.includes(action.cell)) return state;
 
@@ -133,6 +143,7 @@ export function MemoryTilesGame() {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
+  const assist = useAssist();
   const [best, recordBest] = usePersonalBest("cmquant:memorytiles:best");
 
   const runMultiplier = accuracyMultiplier(run.correct, run.attempted);
@@ -170,8 +181,8 @@ export function MemoryTilesGame() {
   }, [run.phase, run.endsAt]);
 
   useEffect(() => {
-    if (run.phase === "done") recordBest(runPoints);
-  }, [run.phase, runPoints, recordBest]);
+    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
+  }, [run.phase, run.assisted, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -202,6 +213,7 @@ export function MemoryTilesGame() {
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        assisted={run.assisted}
         onReplay={start}
       />
     );
@@ -320,7 +332,7 @@ export function MemoryTilesGame() {
                 disabled={showing}
                 onPointerDown={(e) => {
                   e.preventDefault();
-                  dispatch({ type: "tap", cell, now: Date.now() });
+                  dispatch({ type: "tap", cell, now: Date.now(), assist });
                 }}
                 className={`aspect-square touch-manipulation border transition-colors duration-100 ${
                   lit

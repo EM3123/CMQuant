@@ -34,6 +34,7 @@ export function ResultsCard({
   isPersonalBest,
   challengeTarget,
   mistakes,
+  assisted = false,
   onReplay,
 }: {
   gameName: string;
@@ -53,6 +54,12 @@ export function ResultsCard({
   challengeTarget: number;
   /** Named errors from this run, if the game can name them. */
   mistakes?: Record<string, { label: string; fix: string; count: number }>;
+  /**
+   * Assist mode was on for at least one answer. The run is shown but does not
+   * count anywhere: no daily result, no score on the shared link, and the card
+   * says so, so a screenshot of it cannot be passed off as a real score.
+   */
+  assisted?: boolean;
   onReplay: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -63,6 +70,7 @@ export function ResultsCard({
   // finished. If the seed is today's daily seed, the result is recorded - and
   // only the first result of the day is kept.
   useEffect(() => {
+    if (assisted) return;
     const dayKey = todayKey();
     if (seed !== dailySeed(dayKey)) return;
     writeDailyResult({
@@ -73,12 +81,16 @@ export function ResultsCard({
       attempted,
       bestStreak,
     });
-  }, [seed, gameName, points, correct, attempted, bestStreak]);
+  }, [assisted, seed, gameName, points, correct, attempted, bestStreak]);
 
   async function copyChallenge() {
-    const url = `${window.location.origin}${challengePath}?seed=${encodeURIComponent(
-      seed
-    )}&s=${points}`;
+    // An assisted run shares its seed but never its score. The seed is the
+    // useful half anyway - it is what lets somebody play the same questions.
+    const url = assisted
+      ? `${window.location.origin}${challengePath}?seed=${encodeURIComponent(seed)}`
+      : `${window.location.origin}${challengePath}?seed=${encodeURIComponent(
+          seed
+        )}&s=${points}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -105,6 +117,17 @@ export function ResultsCard({
           </span>
         </div>
 
+        {assisted && (
+          <div className="mt-3 border border-data-neg/60 px-3 py-1.5 text-center">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-data-neg">
+              Assisted run
+            </span>
+            <p className="mt-1 text-[10px] leading-relaxed text-muted">
+              Answers were marked correct. Not recorded anywhere.
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-1 flex-col items-center justify-center">
           <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">Score</span>
           <span
@@ -114,7 +137,11 @@ export function ResultsCard({
           >
             {points.toLocaleString()}
           </span>
-          {isPersonalBest ? (
+          {assisted ? (
+            <span className="mt-3 text-[10px] uppercase tracking-[0.18em] text-muted">
+              Not a personal best
+            </span>
+          ) : isPersonalBest ? (
             <span className="mt-3 text-[10px] uppercase tracking-[0.18em] text-rare">
               Personal best
             </span>

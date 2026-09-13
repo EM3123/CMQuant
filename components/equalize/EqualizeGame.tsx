@@ -11,6 +11,7 @@ import {
 } from "@/lib/games/equalize";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
+import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
 import {
@@ -37,6 +38,8 @@ type RunState = {
   feedback: { id: number; ok: boolean } | null;
   /** The tape. Every answer with how long it took, oldest first. */
   tape: { id: number; ok: boolean; ms: number }[];
+  /** Sticky. One assisted answer marks the whole run, and it never unsets. */
+  assisted: boolean;
 };
 
 const EMPTY: RunState = {
@@ -52,11 +55,12 @@ const EMPTY: RunState = {
   shownAt: 0,
   feedback: null,
   tape: [],
+  assisted: false,
 };
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "answer"; side: Side; now: number }
+  | { type: "answer"; side: Side; now: number; assist: boolean }
   | { type: "finish" };
 
 function reducer(state: RunState, action: Action): RunState {
@@ -74,7 +78,7 @@ function reducer(state: RunState, action: Action): RunState {
       if (state.phase !== "running") return state;
 
       const question = questionAt(state.seed, state.index);
-      const ok = validate(question, action.side);
+      const ok = action.assist || validate(question, action.side);
       const elapsed = action.now - state.shownAt;
 
       // A wrong answer costs time rather than points. On a two-way choice,
@@ -84,6 +88,7 @@ function reducer(state: RunState, action: Action): RunState {
 
       const next: RunState = {
         ...state,
+        assisted: state.assisted || action.assist,
         index: state.index + 1,
         attempted: state.attempted + 1,
         correct: state.correct + (ok ? 1 : 0),
@@ -112,6 +117,7 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
+  const assist = useAssist();
   const [best, recordBest] = usePersonalBest("cmquant:equalize:best");
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
@@ -125,9 +131,12 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
     setNow(Date.now());
   }, [challenge]);
 
-  const answer = useCallback((side: Side) => {
-    dispatch({ type: "answer", side, now: Date.now() });
-  }, []);
+  const answer = useCallback(
+    (side: Side) => {
+      dispatch({ type: "answer", side, now: Date.now(), assist });
+    },
+    [assist]
+  );
 
   // Clock. 100ms is fine because the digits are tabular and never jitter.
   useEffect(() => {
@@ -144,8 +153,8 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
   // store rather than setting state, so the re-render comes from the store's
   // own subscription instead of a cascading update.
   useEffect(() => {
-    if (run.phase === "done") recordBest(runPoints);
-  }, [run.phase, runPoints, recordBest]);
+    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
+  }, [run.phase, run.assisted, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -194,6 +203,7 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        assisted={run.assisted}
         onReplay={start}
       />
     );
@@ -261,6 +271,7 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
       )}
 
       <Rail
+        assisted={assist}
         code="EQZ"
         remainingMs={remaining}
         totalMs={ROUND_MS}

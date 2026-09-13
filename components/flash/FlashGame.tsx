@@ -9,6 +9,7 @@ import {
 } from "@/lib/games/flash";
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
+import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import {
   WRONG_POINTS,
@@ -31,6 +32,8 @@ type RunState = {
   points: number;
   endsAt: number;
   shownAt: number;
+  /** Sticky. One assisted answer marks the whole run, and it never unsets. */
+  assisted: boolean;
   feedback: { id: number; ok: boolean } | null;
 };
 
@@ -47,11 +50,12 @@ const EMPTY: RunState = {
   endsAt: 0,
   shownAt: 0,
   feedback: null,
+  assisted: false,
 };
 
 type Action =
   | { type: "start"; seed: string; now: number }
-  | { type: "digit"; digit: string; now: number }
+  | { type: "digit"; digit: string; now: number; assist: boolean }
   | { type: "backspace" }
   | { type: "skip"; now: number }
   | { type: "finish" };
@@ -96,6 +100,10 @@ function reducer(state: RunState, action: Action): RunState {
     case "digit": {
       if (state.phase !== "running") return state;
       const question = questionAt(state.seed, state.index);
+      // Flash is typed, so assist cannot mark a choice correct - it closes
+      // the question on the first keystroke instead.
+      if (action.assist) return advance({ ...state, assisted: true }, true, action.now);
+
       const typed = state.typed + action.digit;
 
       // Auto-advance the instant the digits match. Nobody should have to press
@@ -126,6 +134,7 @@ export function FlashGame() {
   const [run, dispatch] = useReducer(reducer, EMPTY);
   const [now, setNow] = useState(0);
   const challenge = useChallenge();
+  const assist = useAssist();
   const [best, recordBest] = usePersonalBest("cmquant:flash:best");
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
@@ -150,8 +159,8 @@ export function FlashGame() {
   }, [run.phase, run.endsAt]);
 
   useEffect(() => {
-    if (run.phase === "done") recordBest(runPoints);
-  }, [run.phase, runPoints, recordBest]);
+    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
+  }, [run.phase, run.assisted, runPoints, recordBest]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -161,7 +170,7 @@ export function FlashGame() {
       if (run.phase === "running") {
         if (/^\d$/.test(e.key)) {
           e.preventDefault();
-          dispatch({ type: "digit", digit: e.key, now: Date.now() });
+          dispatch({ type: "digit", digit: e.key, now: Date.now(), assist });
         } else if (e.key === "Backspace") {
           e.preventDefault();
           dispatch({ type: "backspace" });
@@ -178,7 +187,7 @@ export function FlashGame() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [run.phase, start]);
+  }, [run.phase, start, assist]);
 
   const question = useMemo(
     () => (run.phase === "running" ? questionAt(run.seed, run.index) : null),
@@ -202,6 +211,7 @@ export function FlashGame() {
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        assisted={run.assisted}
         onReplay={start}
       />
     );
@@ -320,7 +330,7 @@ export function FlashGame() {
             renders everywhere rather than behind a touch check, because a
             visible pad also tells a first-time player what the game wants. */}
         <Keypad
-          onDigit={(digit) => dispatch({ type: "digit", digit, now: Date.now() })}
+          onDigit={(digit) => dispatch({ type: "digit", digit, now: Date.now(), assist })}
           onBackspace={() => dispatch({ type: "backspace" })}
           onSkip={() => dispatch({ type: "skip", now: Date.now() })}
         />

@@ -160,23 +160,18 @@ Two traps:
 
 ## Type
 
-Three families, loaded once in `app/layout.tsx`. A fourth is a bug.
+**One family. JetBrains Mono, for everything** — labels, prose, digits,
+headings. `design.md` is explicit about it: strictly no sans-serif. This is a
+terminal and a terminal has one face. A second family is a bug.
 
-| Family | Job |
-| --- | --- |
-| Open Sans | Every piece of UI text, both wings |
-| Source Serif 4 | Display in COMP, via `font-display` |
-| JetBrains Mono | Digits everywhere via `.tabular`, the wordmark, and display in POKER |
+It was three for a while (Geist, then Open Sans, with Cormorant and later
+Source Serif carrying display), and a serif masthead over a page of monospace
+numbers reads as a newspaper *about* a terminal rather than as one.
 
-Open Sans and Source Serif are the two typefaces Carnegie Mellon publishes as
-its own. Both are open-licensed and neither is a mark, so this is a typography
-decision rather than a claim on anyone's brand — the unaffiliated notice in the
-footer is what makes that unambiguous, and it stays.
-
-`font-display` resolves through `--display-family`, so a heading never names a
-face — and the two wings resolve it to different families. COMP gets the serif,
-semibold and tight, because it is a broadsheet. POKER gets the mono, uppercase
-and wide, because it is a solver. Set weight and tracking at the call site.
+`--font-ui`, `--font-numeric` and `--font-display` all still exist and all
+resolve to the same stack, so a component keeps naming a role rather than a
+face. `.tabular` is the hook that turns on tabular figures — a clock that
+jitters reads as broken even when it is right.
 
 The wordmark is `components/site/Wordmark.tsx` and nothing else. It was typed
 by hand in sixteen files before that, which is sixteen chances to drift.
@@ -196,6 +191,42 @@ stay inside, or it slides behind the page background and vanishes.
 - **POKER** has no extra layer at all. Its atmosphere is a `background-image`
   on the root: two grids at different scales, the coarse one every thirteenth
   cell, because a 13 x 13 matrix is the shape every poker solver draws.
+
+## Assist mode, for playtesting
+
+Playing a sixty-second run correctly to reach the results screen gets old on
+the twentieth pass. This sequence marks every answer correct:
+
+```
+Ctrl+E   Ctrl+M   Ctrl+Alt+3   ArrowUp
+```
+
+Enter it again to turn it off. It survives navigation for the tab, so switch it
+on once and click into any game. `ASSIST` appears in the status rail while it
+is live.
+
+It is `Ctrl+Alt+3` rather than `Ctrl+3` because Chrome and Edge reserve
+`Ctrl+1` through `Ctrl+8` for switching tabs at a level a page cannot
+intercept. `preventDefault` does nothing, the tab changes, and the sequence
+dies halfway through.
+
+**An assisted run does not count, and that is the whole design.** Anything in
+the client can be read out of the bundle, so the sequence is not a secret and
+cannot be the protection. Instead: no personal best is written, no daily result
+is recorded, the shared link carries the seed but no score, and the results card
+says ASSISTED RUN across it — so a screenshot of a cheated run labels itself.
+That is also why it can stay in the production build, which is when you most
+want it.
+
+The flag is sticky per run. One assisted answer marks the whole run and it
+never unsets, or turning assist off halfway through would launder an assisted
+run back into a scoring one.
+
+Every game wires it the same way: `useAssist()` in the component, the boolean
+passed into the reducer action, and `assisted: state.assisted || action.assist`
+on the state. Declaring the field without assigning it is exactly the bug this
+shipped with first time — the run was assisted and still wrote a personal best
+of 3,236.
 
 ## Before you push
 
