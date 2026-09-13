@@ -5,7 +5,6 @@ import { Founder } from "@/components/site/Founder";
 import { PlaySection } from "@/components/site/PlaySection";
 import { ChallengeJump } from "@/components/site/ChallengeJump";
 import { ScrollProgress } from "@/components/site/ScrollProgress";
-import { Reveal, RevealList, RevealItem } from "@/components/site/Reveal";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
 
@@ -117,7 +116,7 @@ export default function Home() {
           questions you played and find out who is faster.
         </p>
 
-        <Reveal delay={0.15} className="mt-16 flex items-start gap-12 sm:gap-20">
+        <div className="mt-14 flex items-start gap-12 sm:gap-20">
           <Founder
             name="Edmund Michalski"
             role="Runtime, design system, daily"
@@ -130,7 +129,7 @@ export default function Home() {
             linkedin="https://www.linkedin.com/in/cameron-jiang-247b60391/"
             photo="/team/cameron.jpg"
           />
-        </Reveal>
+        </div>
 
         <a
           href="#play"
@@ -171,11 +170,9 @@ export default function Home() {
               <span className="text-right">Wing</span>
             </div>
 
-            <RevealList>
-              {GAMES.map((game) => (
-                <RevealItem key={game.id}>
-                  <Link href={game.href} className="block">
-                    <div className="group grid grid-cols-[1fr_3.5rem_5rem] items-baseline gap-x-3 border-b border-hairline py-3 hover:bg-white/[0.03] sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
+            {GAMES.map((game) => (
+              <Link key={game.id} href={game.href} className="block">
+                    <div className="group grid grid-cols-[1fr_3.5rem_5rem] items-baseline gap-x-3 border-b border-hairline py-3 hover:bg-accent/10 sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
                       <span className="tabular hidden text-muted sm:block">{game.id}</span>
                       <span>
                         <span className="text-primary transition-colors group-hover:text-accent-ink">
@@ -197,9 +194,7 @@ export default function Home() {
                       </span>
                     </div>
                   </Link>
-                </RevealItem>
               ))}
-            </RevealList>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">

@@ -30,45 +30,33 @@
    semantic layer is missing a token.
    -------------------------------------------------------------------------- */
 @theme {
-  --color-cmu-black: #000000;
-  --color-cmu-iron: #a4a9ad;
-  --color-cmu-graphite: #6d6e71;
-  --color-cmu-steel: #e0e0e0;
-
-  /* #C41230 is Carnegie Red. Never label it "Tartan" anywhere in the codebase
-     or the UI - that word is CMU trademark property, the hex is not. */
+  /* Carnegie palette. #C41230 is Carnegie Red - never label it "Tartan"
+     anywhere in the codebase or the UI, that word is trademark property and
+     the hex is not. Kept because the playing cards are printed with it. */
   --color-carnegie-red: #c41230;
   --color-scots-rose: #ef3a47;
-  --color-skibo-red: #941120;
-
+  --color-cmu-iron: #a4a9ad;
   --color-matte-white: #f3f4f6;
   --color-gold-leaf: #d4af37;
-  --color-gold-thread: #fdb515;
-  --color-felt-green: #03140b;
 
-  /* Solver. The three colours a poker solver puts on a range grid, plus the
-     graphite it puts them on.
+  /* --- Realm 1, the quant matrix. See design.md. ------------------------- */
+  --color-void: #0b0c10;
+  --color-dark-iron: #1f2833;
+  --color-ice: #e5e9f0;
+  --color-slate-muted: #666666;
 
-     This replaced a neon nightclub palette. The club looked like a casino,
-     and a casino is the one thing this wing must not look like - it is a
-     teaching tool with no money in it. Solvers are the reference now: dense,
-     numeric, square, and coloured by what an action IS rather than by mood.
+  /* --- Realm 2, the underground poker lab. ------------------------------- */
+  --color-matte-black: #050505;
+  --color-smoke-red: #1a0d0d;
+  --color-ash-red: #e6b8b8;
+  --color-deep-red: #cc0000;
+  --color-charcoal: #262626;
 
-     Raise is Carnegie Red, which is both correct for a solver and already the
-     brand. Call is the same green as every other positive number on the site.
-     Fold is slate, because folding is the absence of a decision. */
-  --color-act-raise: #c41230;
-  --color-act-call: #10b981;
-  --color-act-fold: #475569;
-  --color-terminal-ice: #67e8f9;
-  --color-solver-night: #06080a;
-
-  /* Functional data indicators. Identical in both wings on purpose - a number
-     that means "up" must not change colour when you walk between rooms. */
-  --color-data-pos: #10b981;
-  --color-data-neg: #ef4444;
-
-  --color-blue-thread: #043673;
+  /* Functional data indicators, identical in both realms on purpose - a
+     number that means "up" must not change colour when you walk between
+     rooms. High luminance, because they sit on near-black. */
+  --color-data-pos: #00ff66;
+  --color-data-neg: #ff3366;
 }
 
 /* --------------------------------------------------------------------------
@@ -94,9 +82,12 @@
   --color-accent-ink: var(--accent-ink);
   --color-rare: var(--rare);
 
-  --font-ui: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-numeric: var(--font-jetbrains-mono), ui-monospace, "SF Mono", monospace;
-  --font-display: var(--display-family);
+  /* One family. design.md: strictly no sans-serif. These three names are kept
+     so components keep reading a role rather than a face, but every one of
+     them resolves to the same mono - a second family is a bug. */
+  --font-ui: var(--mono-stack);
+  --font-numeric: var(--mono-stack);
+  --font-display: var(--mono-stack);
 
   --radius-panel: var(--radius-panel-raw);
   --radius-control: var(--radius-control-raw);
@@ -114,35 +105,40 @@
    consistency".
    -------------------------------------------------------------------------- */
 
-/* Default surface, used before a wing is declared (landing, /me, /board). */
+/* Default surface, used before a wing is declared (/daily, /legal/*). It takes
+   the quant matrix, because that is the house style. */
 :root {
-  --surface: var(--color-cmu-black);
-  --surface-raised: #0a0a0a;
-  --surface-sunken: #000000;
+  --mono-stack: var(--font-jetbrains-mono), "Fira Code", ui-monospace, "SF Mono",
+    monospace;
 
-  --hairline: color-mix(in oklab, var(--color-cmu-iron) 20%, transparent);
-  --hairline-strong: color-mix(in oklab, var(--color-cmu-iron) 42%, transparent);
+  --surface: var(--color-void);
+  --surface-raised: #101319;
+  --surface-sunken: #07080b;
 
-  --text-primary: var(--color-matte-white);
-  --text-secondary: var(--color-cmu-iron);
-  --text-muted: color-mix(in oklab, var(--color-cmu-iron) 62%, transparent);
+  --hairline: var(--color-dark-iron);
+  --hairline-strong: #2c3947;
+
+  --text-primary: var(--color-ice);
+  --text-secondary: var(--color-slate-muted);
+  --text-muted: #444a55;
 
   --accent: var(--color-carnegie-red);
-  /* Carnegie Red on black is 2.5:1 - it fails as text. Anything a person has to
-     READ in the accent colour uses accent-ink; the flat red is for glow,
-     backlights, rules, card backs and fills. */
+  /* Carnegie Red is 2.5:1 on black and fails as text. The flat red is for
+     fills, rules and card backs; anything a person READS uses accent-ink. */
   --accent-ink: var(--color-scots-rose);
-  --rare: var(--color-gold-thread);
+  --rare: var(--color-data-pos);
 
-  --display-family: var(--font-source-serif), ui-serif, Georgia, serif;
+  --display-family: var(--mono-stack);
 
+  /* design.md: absolute zero, everywhere, both realms. These exist so a
+     component never hard-codes a radius, not so a wing can choose one. */
   --radius-panel-raw: 0px;
   --radius-control-raw: 0px;
 
   --shadow-panel-raw: none;
   --shadow-spot-raw: none;
 
-  --tracking-wing-raw: 0em;
+  --tracking-wing-raw: 0.02em;
 
   /* Feedback must land before the finger leaves the key. */
   --dur-feedback: 90ms;
@@ -152,82 +148,66 @@
   color-scheme: dark;
 }
 
-/* --- COMP: the workbench ------------------------------------------------- */
+/* --- REALM 1: the quant matrix -------------------------------------------
+   A high-performance screen, not a website. Deep void, dark iron rules, matte
+   silver text, and exactly two data colours. Panels butt against each other
+   and share their borders; there is no decorative space anywhere in here.
+   -------------------------------------------------------------------------- */
 [data-wing="comp"] {
-  --surface: var(--color-cmu-black);
-  --surface-raised: #070707;
-  --surface-sunken: #000000;
+  --surface: var(--color-void);
+  --surface-raised: #0f1218;
+  --surface-sunken: #08090d;
 
-  --hairline: color-mix(in oklab, var(--color-cmu-iron) 20%, transparent);
-  --hairline-strong: color-mix(in oklab, var(--color-cmu-iron) 45%, transparent);
+  --hairline: var(--color-dark-iron);
+  --hairline-strong: #2c3947;
 
-  --text-primary: var(--color-matte-white);
-  --text-secondary: var(--color-cmu-iron);
-  --text-muted: color-mix(in oklab, var(--color-cmu-iron) 55%, transparent);
+  --text-primary: var(--color-ice);
+  --text-secondary: var(--color-slate-muted);
+  --text-muted: #444a55;
 
   --accent: var(--color-carnegie-red);
   --accent-ink: var(--color-scots-rose);
-  --rare: var(--color-gold-thread);
+  --rare: var(--color-data-pos);
 
-  --display-family: var(--font-source-serif), ui-serif, Georgia, serif;
+  --display-family: var(--mono-stack);
 
-  /* Rigid. Hairlines only. */
   --radius-panel-raw: 0px;
   --radius-control-raw: 0px;
   --shadow-panel-raw: none;
   --shadow-spot-raw: none;
-  --tracking-wing-raw: 0.01em;
+  --tracking-wing-raw: 0.02em;
 }
 
-/* --- POKER: the solver ---------------------------------------------------
-   Was a neon nightclub, and the nightclub was wrong. It looked like a casino,
-   and a casino is the one thing this wing must not look like - there is no
-   money in it and there never will be. It is a teaching tool.
-
-   The reference now is the software a poker player actually studies with: a
-   solver. Dense, square, monospace, coloured by what an action IS. That is
-   also a far better fit for what the wing does, which is turn a feeling into
-   a number.
-
-   Cool graphite rather than the workbench's pure black, so the two rooms are
-   still obviously different rooms, and the ice accent belongs to a terminal
-   rather than to a bar.
+/* --- REALM 2: the underground poker lab -----------------------------------
+   Absolute matte black, borders tinted with smoke rather than drawn in grey,
+   ash-red text and one deep red for anything live. Everything structural is
+   a cell in a matrix.
    -------------------------------------------------------------------------- */
 [data-wing="poker"] {
-  --surface: var(--color-solver-night);
-  --surface-raised: #0c1116;
-  --surface-sunken: #04070a;
+  --surface: var(--color-matte-black);
+  --surface-raised: #0c0808;
+  --surface-sunken: #030303;
 
-  --hairline: color-mix(in oklab, #7c8ba1 22%, transparent);
-  --hairline-strong: color-mix(in oklab, #7c8ba1 45%, transparent);
+  --hairline: var(--color-smoke-red);
+  --hairline-strong: #3a1a1a;
 
-  --text-primary: #e7edf3;
-  --text-secondary: #8b98a8;
-  --text-muted: color-mix(in oklab, #8b98a8 58%, transparent);
+  --text-primary: var(--color-ash-red);
+  --text-secondary: #7a5f5f;
+  --text-muted: #4d3c3c;
 
-  --accent: var(--color-act-raise);
-  --accent-ink: var(--color-scots-rose);
-  --rare: var(--color-terminal-ice);
+  --accent: var(--color-deep-red);
+  --accent-ink: #ff4d4d;
+  --rare: var(--color-deep-red);
 
-  /* Mono, not the serif. A glowing italic serif headline was the single
-     loudest thing about the old version and the least like the reference. */
-  --display-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --display-family: var(--mono-stack);
 
-  /* Square. Solvers are made of cells. */
-  --radius-panel-raw: 2px;
-  --radius-control-raw: 2px;
+  --radius-panel-raw: 0px;
+  --radius-control-raw: 0px;
   --shadow-panel-raw: none;
   --shadow-spot-raw: none;
-  --tracking-wing-raw: 0.16em;
+  --tracking-wing-raw: 0.18em;
 }
 
-/* --------------------------------------------------------------------------
-   4. Wing variants
-   Lets a shared component take a wing-specific tweak without branching in JS:
-     <h1 className="text-2xl wing-poker:italic wing-poker:tracking-widest">
-   Use sparingly. If a component needs more than two of these, it wants to be
-   two components.
-   -------------------------------------------------------------------------- */
 @custom-variant wing-comp (&:where([data-wing="comp"], [data-wing="comp"] *));
 @custom-variant wing-poker (&:where([data-wing="poker"], [data-wing="poker"] *));
 
@@ -237,16 +217,18 @@
 body {
   background: var(--surface);
   color: var(--text-primary);
-  font-family: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--mono-stack);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 /* Digits must not change width as they count. A timer that jitters reads as
    broken even when it is correct. */
+/* Kept as a hook even though the whole product is already monospace - it is
+   what turns tabular figures on, and a clock that jitters reads as broken. */
 .tabular,
 [data-numeric] {
-  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-family: var(--mono-stack);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1, "ss01" 1;
 }
@@ -280,52 +262,48 @@ body {
 @utility wing-grid {
   background-image: linear-gradient(
       to right,
-      color-mix(in oklab, var(--color-cmu-iron) 7%, transparent) 1px,
+      color-mix(in oklab, var(--color-dark-iron) 62%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       to bottom,
-      color-mix(in oklab, var(--color-cmu-iron) 7%, transparent) 1px,
+      color-mix(in oklab, var(--color-dark-iron) 62%, transparent) 1px,
       transparent 1px
     );
-  background-size: 48px 48px;
-  background-position: center center;
+  background-size: 40px 40px;
+  background-position: center top;
 }
 
-/* POKER: the grid a range lives on.
-   
-   Two sets of lines at different scales - a fine cell grid and a heavier one
-   every thirteenth cell, because thirteen is how many ranks there are and a
-   13 x 13 matrix is the shape every poker solver draws. No colour wash, no
-   beams, no lamp. The old version had all three and read as a bar. */
+/* POKER: the matrix the whole room is built on.
+   Two grids at different scales - a fine cell and a heavy rule every
+   thirteenth, because thirteen ranks is the shape of a range chart. Tinted
+   with smoke red rather than drawn in grey, and no light source anywhere. */
 @utility wing-ambient {
   background-image: linear-gradient(
       to right,
-      color-mix(in oklab, #7c8ba1 6%, transparent) 1px,
+      color-mix(in oklab, var(--color-smoke-red) 85%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       to bottom,
-      color-mix(in oklab, #7c8ba1 6%, transparent) 1px,
+      color-mix(in oklab, var(--color-smoke-red) 85%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       to right,
-      color-mix(in oklab, #7c8ba1 11%, transparent) 1px,
+      color-mix(in oklab, var(--color-deep-red) 13%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
       to bottom,
-      color-mix(in oklab, #7c8ba1 11%, transparent) 1px,
+      color-mix(in oklab, var(--color-deep-red) 13%, transparent) 1px,
       transparent 1px
-    ),
-    linear-gradient(to bottom, #0a1017 0%, var(--color-solver-night) 55%);
+    );
   background-size:
     26px 26px,
     26px 26px,
     338px 338px,
-    338px 338px,
-    100% 100%;
+    338px 338px;
   background-position: center top;
 }
 
@@ -339,8 +317,8 @@ body {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  color: var(--color-cmu-iron);
-  opacity: 0.16;
+  color: #6f7d8c;
+  opacity: 0.13;
 
   /* Punch the middle out. Without this a dragon runs straight through the
      answer panel, and while the digits stay readable they stop being the only

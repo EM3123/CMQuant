@@ -3,6 +3,9 @@ import { Wing, Label } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
+import { CodePanel } from "@/components/comp/CodePanel";
+import { RampPlot } from "@/components/comp/RampPlot";
+import { SystemOutput } from "@/components/comp/SystemOutput";
 
 const DRILLS = [
   {
@@ -63,13 +66,23 @@ const DRILLS = [
   },
 ];
 
+/**
+ * The quant matrix, per design.md Realm 1.
+ *
+ * Not a page with sections - a screen divided into panels that butt against
+ * each other and share their borders. Code workspace top left, analytics top
+ * right, execution log below, drill index filling the rest. Every panel holds
+ * something true: the source is read off disk, the plot calls the same
+ * difficulty functions the games call, and the log is measured during the
+ * build.
+ */
 export default function CompPage() {
   return (
     <Wing wing="comp">
-      <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
+      <header className="flex shrink-0 items-center justify-between border-b border-hairline-strong px-3 py-2">
         <div className="flex items-baseline gap-4">
           <Wordmark />
-          <Label>Comp / Computational Thinking</Label>
+          <Label>Realm 1 / Quant Matrix</Label>
         </div>
         <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
           <Link href="/daily" className="text-rare transition-colors hover:text-primary">
@@ -82,84 +95,86 @@ export default function CompPage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-4 py-12">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Computational Thinking
-          </h1>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
-            Mental calculation, estimation and pattern recognition, sixty
-            seconds at a time.
-          </p>
+        {/* Top band: source on the left, the one plot this product has on the
+            right. They share the border between them. */}
+        <div className="grid divide-y divide-hairline border-b border-hairline lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
+          <CodePanel file="lib/games/equalize.ts" from={226} to={252} />
+          <RampPlot />
+        </div>
 
-          <div className="mt-10 flex items-center justify-between border-b border-hairline pb-1.5">
-            <Label>Drill index</Label>
-            <Label>5 live</Label>
-          </div>
+        {/* Second band: the log, and the index it is talking about. */}
+        <div className="grid divide-y divide-hairline lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] lg:divide-x lg:divide-y-0">
+          <SystemOutput />
 
-          {/* A grid rather than a table, because every live row has to be a
-              single link and an anchor cannot wrap a table row. */}
-          <div className="text-xs">
-            <div className="grid grid-cols-[1fr_3.5rem_4.5rem] gap-x-3 border-b border-hairline py-2 text-secondary sm:grid-cols-[3.5rem_1fr_5rem_5.5rem]">
-              {/* The ID column is the first thing to go on a narrow screen - it
-                  is a label for the drill, and the name is right beside it. */}
-              <span className="hidden sm:block">ID</span>
-              <span>Drill</span>
-              <span className="text-right">Best</span>
-              <span className="text-right">Status</span>
+          <div>
+            <div className="flex items-baseline justify-between border-b border-hairline px-3 py-1.5">
+              <Label>Drill index</Label>
+              <Label>5 live / 7 total</Label>
             </div>
 
-            {DRILLS.map((drill) => {
-              const row = (
-                <div
-                  className={`grid grid-cols-[1fr_3.5rem_4.5rem] items-baseline gap-x-3 border-b border-hairline py-3 sm:grid-cols-[3.5rem_1fr_5rem_5.5rem] ${
-                    drill.href ? "group hover:bg-white/[0.03]" : "opacity-60"
-                  }`}
-                >
-                  <span className="tabular hidden text-muted sm:block">{drill.id}</span>
-                  <span>
-                    <span
-                      className={
-                        drill.href
-                          ? "text-primary transition-colors group-hover:text-accent-ink"
-                          : "text-primary"
-                      }
-                    >
-                      {drill.name}
-                    </span>
-                    <span className="mt-0.5 block text-muted sm:ml-3 sm:mt-0 sm:inline">
-                      {drill.skill}
-                    </span>
-                  </span>
-                  <span className="text-right text-primary">
-                    {drill.storageKey ? (
-                      <BestCell storageKey={drill.storageKey} />
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </span>
-                  <span
-                    className={`text-right ${
-                      drill.status === "LIVE" ? "text-data-pos" : "text-muted"
+            {/* A grid rather than a table, because every live row has to be a
+                single link and an anchor cannot wrap a table row. */}
+            <div className="text-[11px]">
+              <div className="grid grid-cols-[1fr_3.5rem_4.5rem] gap-x-3 border-b border-hairline px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] text-secondary sm:grid-cols-[3rem_1fr_4.5rem_5rem]">
+                <span className="hidden sm:block">ID</span>
+                <span>Drill</span>
+                <span className="text-right">Best</span>
+                <span className="text-right">Status</span>
+              </div>
+
+              {DRILLS.map((drill) => {
+                const row = (
+                  <div
+                    className={`grid grid-cols-[1fr_3.5rem_4.5rem] items-baseline gap-x-3 border-b border-hairline px-3 py-2 sm:grid-cols-[3rem_1fr_4.5rem_5rem] ${
+                      drill.href ? "group hover:bg-accent/10" : "opacity-50"
                     }`}
                   >
-                    {drill.status}
-                  </span>
-                </div>
-              );
+                    <span className="tabular hidden text-muted sm:block">{drill.id}</span>
+                    <span>
+                      <span
+                        className={
+                          drill.href
+                            ? "text-primary transition-colors group-hover:text-accent-ink"
+                            : "text-primary"
+                        }
+                      >
+                        {drill.name}
+                      </span>
+                      <span className="mt-0.5 block text-muted sm:ml-3 sm:mt-0 sm:inline">
+                        {drill.skill}
+                      </span>
+                    </span>
+                    <span className="tabular text-right text-primary">
+                      {drill.storageKey ? (
+                        <BestCell storageKey={drill.storageKey} />
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </span>
+                    <span
+                      className={`text-right text-[9px] tracking-[0.14em] ${
+                        drill.status === "LIVE" ? "text-data-pos" : "text-muted"
+                      }`}
+                    >
+                      {drill.status}
+                    </span>
+                  </div>
+                );
 
-              return drill.href ? (
-                <Link key={drill.id} href={drill.href} className="block">
-                  {row}
-                </Link>
-              ) : (
-                <div key={drill.id}>{row}</div>
-              );
-            })}
+                return drill.href ? (
+                  <Link key={drill.id} href={drill.href} className="block">
+                    {row}
+                  </Link>
+                ) : (
+                  <div key={drill.id}>{row}</div>
+                );
+              })}
+
+              <p className="px-3 py-2 text-[9px] text-muted">
+                Bests are stored in this browser. There is no account.
+              </p>
+            </div>
           </div>
-
-          <p className="mt-8 text-[11px] text-muted">
-            Bests are stored in this browser. There is no account.
-          </p>
         </div>
       </div>
 

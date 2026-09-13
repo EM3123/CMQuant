@@ -22,19 +22,13 @@ import {
   FOUR_OF_A_KIND,
   STRAIGHT_FLUSH,
 } from "../lib/poker/hand";
+import { CATEGORY_COUNTS } from "../lib/poker/frequency";
 import type { CardCode } from "../components/cards/PlayingCard";
 
-const EXPECTED: Record<number, number> = {
-  [STRAIGHT_FLUSH]: 40,
-  [FOUR_OF_A_KIND]: 624,
-  [FULL_HOUSE]: 3_744,
-  [FLUSH]: 5_108,
-  [STRAIGHT]: 10_200,
-  [THREE_OF_A_KIND]: 54_912,
-  [TWO_PAIR]: 123_552,
-  [ONE_PAIR]: 1_098_240,
-  [HIGH_CARD]: 1_302_540,
-};
+// One source of truth. lib/poker/frequency.ts carries this table because the
+// site renders it, and the site must not render a number the test does not
+// prove. Importing it here means the screen and the proof cannot drift.
+const EXPECTED = CATEGORY_COUNTS;
 
 const counts = new Array(9).fill(0);
 let total = 0;

@@ -10,7 +10,7 @@
     "verify:equalize": "tsx scripts/verify-equalize.ts",
     "verify:potodds": "tsx scripts/verify-potodds.ts",
     "verify:flash": "tsx scripts/verify-flash.ts",
-    "verify": "npm run verify:hand && npm run verify:rank && npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds && npm run verify:outs && npm run verify:combinatorics && npm run verify:pokerminute",
+    "verify": "npm run verify:hand && npm run verify:rank && npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds && npm run verify:outs && npm run verify:combinatorics && npm run verify:pokerminute && npm run verify:flopstrength",
     "verify:approx": "tsx scripts/verify-approx.ts",
     "verify:doomsday": "tsx scripts/verify-doomsday.ts",
     "verify:memorytiles": "tsx scripts/verify-memorytiles.ts",
@@ -19,7 +19,9 @@
     "new:game": "node scripts/new-game.mjs",
     "verify:combinatorics": "tsx scripts/verify-combinatorics.ts",
     "verify:rank": "tsx scripts/verify-rank.ts",
-    "verify:pokerminute": "tsx scripts/verify-pokerminute.ts"
+    "verify:pokerminute": "tsx scripts/verify-pokerminute.ts",
+    "verify:flopstrength": "tsx scripts/verify-flop-strength.ts",
+    "build:flopstrength": "tsx scripts/build-flop-strength.ts"
   },
   "dependencies": {
     "motion": "^13.2.0",

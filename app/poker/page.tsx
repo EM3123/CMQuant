@@ -3,20 +3,30 @@ import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Wordmark } from "@/components/site/Wordmark";
 import { RangeGrid } from "@/components/poker/RangeGrid";
+import { TableGrid } from "@/components/poker/TableGrid";
 import { BestCell } from "@/components/game/BestCell";
+import { CATEGORY_NAMES } from "@/lib/poker/hand";
+import {
+  CATEGORY_COUNTS,
+  CATEGORY_ORDER,
+  FIVE_CARD_HANDS,
+  DISTINCT_HAND_VALUES,
+} from "@/lib/poker/frequency";
 
 /**
- * Poker Lab, in the register of the software a poker player actually studies
- * with rather than the register of a casino.
+ * The underground poker lab, laid out as telemetry rather than as a room.
  *
- * The previous version was a felt table under a lamp, a fanned hand, and a
- * glowing italic headline in a violet room. It looked like something you
- * gamble on, which is the one thing this wing must never look like - there is
- * no money in it and the spec forbids there ever being any.
+ * design.md, Realm 2: a top-down table grid, a dense range matrix, statistics
+ * in tiny monospace. Absolute matte black, smoke-red rules, deep red for
+ * anything live, zero radius, panels butting against each other and sharing
+ * their borders.
  *
- * This is a solver index instead: a range matrix, mono headings, square cells,
- * a dense table with numeric columns. Everything on the page is either a
- * number or a link to something that produces one.
+ * What is NOT here and will not be: VPIP, PFR and 3-bet frequency. The brief
+ * asks for them, and they are statistics about tracked opponents. There are no
+ * opponents on this site, no hand histories and no database, so any number
+ * under those headings would be invented - the exact failure this wing exists
+ * to avoid. The telemetry panel carries enumerated constants instead: the hand
+ * frequency table that `verify-hand.ts` proves by walking all 2,598,960 hands.
  */
 
 const TABLES = [
@@ -55,15 +65,13 @@ const TABLES = [
 ];
 
 export default function PokerPage() {
-  // Rows are whole-row links, so no cell may contain a link of its own - an
-  // anchor inside an anchor is invalid and browsers resolve it unpredictably.
-  // The explainers are reachable from each game's intro screen instead.
   return (
     <Wing wing="poker">
-      <div className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-5 py-4">
-        <nav className="flex shrink-0 items-center justify-between border-b border-hairline pb-3">
+      <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 py-3">
+        <nav className="flex shrink-0 items-center justify-between border-b border-hairline-strong pb-2.5">
           <Wordmark />
           <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
+            <span className="text-accent-ink">Poker Lab</span>
             <Link href="/daily" className="transition-colors hover:text-primary">
               Daily
             </Link>
@@ -73,37 +81,38 @@ export default function PokerPage() {
           </div>
         </nav>
 
-        {/* Two columns, the way a solver's header is: the thing being analysed
-            on one side, what you can do about it on the other. */}
-        <header className="mt-12 grid gap-10 md:grid-cols-[minmax(0,1fr)_300px] md:items-start md:gap-14">
-          <div>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-rare">
-              Probability in practice
-            </span>
-            <h1 className="mt-4 font-display text-4xl font-medium uppercase tracking-wing text-primary sm:text-5xl">
-              Poker Lab
-            </h1>
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-secondary">
-              Nothing here is played for money. The cards are here because
-              probability sticks when there is a decision attached to it.
-            </p>
-
-            <dl className="mt-10 grid max-w-md grid-cols-3 border-y border-hairline">
-              <Figure label="Five-card hands" value="2,598,960" />
-              <Figure label="Distinct values" value="7,462" />
-              <Figure label="Starting hands" value="169" />
-            </dl>
-            <p className="mt-3 max-w-md text-[11px] leading-relaxed text-muted">
-              Every number here is enumerated rather than sampled. The hand
-              ranking is checked against all 2,598,960 five-card hands.
-            </p>
-          </div>
-
-          <RangeGrid />
+        <header className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-b border-hairline py-4">
+          <h1 className="font-display text-2xl font-medium uppercase tracking-wing text-primary">
+            Poker Lab
+          </h1>
+          <p className="max-w-xl text-[11px] leading-relaxed text-secondary">
+            Nothing here is played for money. Every number is enumerated rather
+            than sampled, and the hand ranking is checked against all{" "}
+            <span className="tabular text-primary">
+              {FIVE_CARD_HANDS.toLocaleString()}
+            </span>{" "}
+            five-card hands.
+          </p>
         </header>
 
-        <div className="mt-14 flex-1">
-          <div className="grid grid-cols-[2.6rem_1fr_4rem_4.5rem] items-baseline gap-x-3 border-b border-hairline pb-2 text-[10px] uppercase tracking-[0.18em] text-secondary">
+        {/* Three panels sharing their borders. No gutters, no cards, no
+            shadows - density is the aesthetic here, per design.md. */}
+        <div className="grid flex-1 grid-cols-1 divide-y divide-hairline border-b border-hairline lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,1.15fr)] lg:divide-x lg:divide-y-0">
+          <section className="p-4">
+            <TableGrid />
+          </section>
+
+          <section className="p-4">
+            <Telemetry />
+          </section>
+
+          <section className="p-4">
+            <RangeGrid />
+          </section>
+        </div>
+
+        <div className="border-b border-hairline">
+          <div className="grid grid-cols-[2.4rem_1fr_3.6rem_4.2rem] items-baseline gap-x-3 border-b border-hairline px-4 py-2 text-[9px] uppercase tracking-[0.18em] text-secondary">
             <span>ID</span>
             <span>Table</span>
             <span className="text-right">Best</span>
@@ -113,8 +122,8 @@ export default function PokerPage() {
           {TABLES.map((t) => {
             const row = (
               <div
-                className={`grid grid-cols-[2.6rem_1fr_4rem_4.5rem] items-baseline gap-x-3 border-b border-hairline py-3 text-xs ${
-                  t.href ? "group hover:bg-white/[0.03]" : "opacity-55"
+                className={`grid grid-cols-[2.4rem_1fr_3.6rem_4.2rem] items-baseline gap-x-3 border-b border-hairline px-4 py-2.5 text-[11px] last:border-b-0 ${
+                  t.href ? "group hover:bg-accent/10" : "opacity-50"
                 }`}
               >
                 <span className="tabular text-muted">{t.code}</span>
@@ -122,7 +131,7 @@ export default function PokerPage() {
                   <span
                     className={
                       t.href
-                        ? "text-primary transition-colors group-hover:text-rare"
+                        ? "text-primary transition-colors group-hover:text-accent-ink"
                         : "text-primary"
                     }
                   >
@@ -140,7 +149,7 @@ export default function PokerPage() {
                   )}
                 </span>
                 <span
-                  className={`text-right text-[10px] tracking-[0.14em] ${
+                  className={`text-right text-[9px] tracking-[0.14em] ${
                     t.href ? "text-data-pos" : "text-muted"
                   }`}
                 >
@@ -165,13 +174,63 @@ export default function PokerPage() {
   );
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+/** Enumerated constants, in the shape a telemetry column takes. */
+function Telemetry() {
   return (
-    <div className="py-3">
-      <dd className="tabular text-lg text-primary">{value}</dd>
-      <dt className="mt-1 text-[9px] uppercase tracking-[0.16em] text-secondary">
-        {label}
-      </dt>
+    <div>
+      <div className="flex items-baseline justify-between border-b border-hairline pb-1.5">
+        <span className="text-[9px] uppercase tracking-[0.18em] text-secondary">
+          Hand frequency
+        </span>
+        <span className="tabular text-[9px] text-muted">
+          n={FIVE_CARD_HANDS.toLocaleString()}
+        </span>
+      </div>
+
+      <table className="mt-2 w-full">
+        <tbody>
+          {CATEGORY_ORDER.map((cat) => {
+            const count = CATEGORY_COUNTS[cat];
+            const share = (count / FIVE_CARD_HANDS) * 100;
+            return (
+              <tr key={cat} className="border-b border-hairline">
+                <td className="py-[3px] text-[10px] text-secondary">
+                  {CATEGORY_NAMES[cat]}
+                </td>
+                <td className="tabular py-[3px] text-right text-[10px] text-primary">
+                  {count.toLocaleString()}
+                </td>
+                <td className="tabular w-14 py-[3px] text-right text-[10px] text-muted">
+                  {share < 0.01 ? share.toFixed(4) : share.toFixed(2)}%
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <dl className="mt-3 space-y-1">
+        <Stat
+          label="Distinct hand values"
+          value={DISTINCT_HAND_VALUES.toLocaleString()}
+        />
+        <Stat label="Starting combinations" value="1,326" />
+        <Stat label="Starting hand classes" value="169" />
+        <Stat label="Flops enumerated per hand" value="19,600" />
+      </dl>
+      <p className="mt-2.5 text-[9px] leading-relaxed text-muted">
+        Counts proved by enumeration in the property tests, not quoted. No
+        opponent statistics: this site tracks no players and stores no hands.
+      </p>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-[10px] text-secondary">{label}</dt>
+      <dd className="tabular text-[10px] text-primary">{value}</dd>
     </div>
   );
 }

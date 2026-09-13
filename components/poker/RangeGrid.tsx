@@ -1,49 +1,41 @@
 import { RANKS } from "@/lib/cards";
+import {
+  FLOP_STRENGTH,
+  FLOP_STRENGTH_MIN,
+  FLOP_STRENGTH_MAX,
+} from "@/lib/poker/flop-strength";
 
 /**
- * The 13 x 13 starting-hand matrix.
+ * The 13 x 13 starting-hand matrix, shaded by intensity.
  *
- * This is the single most recognisable object in poker analysis, and putting
- * it at the top of the Poker Lab does the job a felt table and a fanned hand
- * were failing at: it says at a glance that this wing is a study tool and not
- * a casino. Every solver, every range chart and every training site draws this
- * grid. Nobody has ever drawn it on a slot machine.
+ * design.md asks for "varying intensities of dark red and charcoal to indicate
+ * strategic EV distributions". The intensity is real and the quantity is
+ * stated on screen, because an invented EV distribution is precisely the
+ * failure this wing exists to avoid.
  *
- * WHAT THE COLOURS MEAN, AND WHY THEY ARE NOT A RANGE.
+ * What shades it: for each of the 169 hands, the exact share of the 19,600
+ * possible flops on which it makes two pair or better. Every flop enumerated,
+ * none sampled. `scripts/build-flop-strength.ts` computes the table and
+ * `scripts/verify-flop-strength.ts` recomputes a sample of it a second way.
  *
- * The obvious thing to shade it by is an opening range, and that is exactly
- * the thing this project will not fabricate. A range chart is a claim about
- * correct play, it varies by position, stack depth and opponent, and inventing
- * a plausible-looking one is the credibility failure the whole poker wing is
- * built to avoid.
- *
- * So it is shaded by combinations, which is not a claim at all - it is a
- * count, and it is exactly true. A pocket pair can be dealt six ways, a suited
- * hand four, an offsuit hand twelve. That is the first lesson in Combinatorics
- * and the grid is now a legend for it: the diagonal is the pairs, above it is
- * suited, below it is offsuit, and the shading is how many ways each one
- * exists before a single card hits the board.
+ * Preflop equity would have been the natural quantity and is not reachable
+ * here - exact equity against a random hand is on the order of a billion
+ * evaluations per starting hand, and this project does not Monte Carlo. Two
+ * pair or better is the strongest thing that is exactly computable in seconds,
+ * and it separates the hands that can flop a straight or a flush from the ones
+ * that cannot, which is most of what a range chart is for.
  */
 
-/** Combinations of each shape, before any board. */
-const COMBOS = { pair: 6, suited: 4, offsuit: 12 } as const;
-
-type Shape = keyof typeof COMBOS;
-
-function shapeAt(row: number, col: number): Shape {
-  if (row === col) return "pair";
-  return col > row ? "suited" : "offsuit";
+function shapeAt(row: number, col: number) {
+  if (row === col) return "pair" as const;
+  return col > row ? ("suited" as const) : ("offsuit" as const);
 }
 
 /**
- * RANKS is already ace-first, which is the order a hand grid wants: AA in the
- * top left, 22 in the bottom right, suited above the diagonal and offsuit
- * below it. Reversing it - which the first version did - builds the chart
- * upside down and mirrored, and every poker player who saw it would know
- * instantly that whoever made it had never used one.
- *
- * The lower index is the higher card, so the label always names the high card
- * first: AKs, never KAs.
+ * RANKS is already ace-first, which is the order a hand grid wants: AA top
+ * left, 22 bottom right, suited above the diagonal, offsuit below. Reversing
+ * it - which the first version did - builds the chart upside down and
+ * mirrored, and any poker player would know at a glance.
  */
 function label(row: number, col: number): string {
   const high = RANKS[Math.min(row, col)];
@@ -53,52 +45,74 @@ function label(row: number, col: number): string {
   return `${high}${low}${shape === "suited" ? "s" : "o"}`;
 }
 
-const CELL: Record<Shape, string> = {
-  // Offsuit is the most common shape and gets the most ink, which is the point
-  // the grid is making. Pairs are the rarest and read as the quiet diagonal.
-  offsuit: "bg-act-raise/28 text-primary",
-  suited: "bg-act-call/22 text-primary",
-  pair: "bg-act-fold/45 text-primary",
-};
+/**
+ * Charcoal at the weakest cell, deep red at the strongest. Normalised across
+ * the table's own range, because the raw numbers run 6% to 28% and a ramp
+ * anchored at zero would show almost no variation at all.
+ */
+function cellStyle(value: number) {
+  const t = (value - FLOP_STRENGTH_MIN) / (FLOP_STRENGTH_MAX - FLOP_STRENGTH_MIN);
+  const eased = Math.pow(t, 0.7);
+  return {
+    backgroundColor: `color-mix(in oklab, var(--color-deep-red) ${(
+      8 +
+      eased * 74
+    ).toFixed(1)}%, var(--color-charcoal))`,
+  };
+}
 
 export function RangeGrid({ className = "" }: { className?: string }) {
   return (
     <div className={className}>
+      <div className="flex items-baseline justify-between border-b border-hairline pb-1.5">
+        <span className="text-[9px] uppercase tracking-[0.18em] text-secondary">
+          Range matrix
+        </span>
+        <span className="text-[9px] uppercase tracking-[0.18em] text-muted">
+          169 hands
+        </span>
+      </div>
+
       <div
-        className="grid gap-px"
+        className="mt-2 grid gap-px"
         style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
       >
-        {Array.from({ length: 13 }).flatMap((_, row) =>
-          Array.from({ length: 13 }).map((_, col) => {
-            const shape = shapeAt(row, col);
-            return (
-              <div
-                key={`${row}-${col}`}
-                title={`${label(row, col)} · ${COMBOS[shape]} combinations`}
-                className={`tabular flex aspect-square items-center justify-center text-[7px] leading-none sm:text-[9px] ${CELL[shape]}`}
-              >
-                {label(row, col)}
-              </div>
-            );
-          })
+        {FLOP_STRENGTH.flatMap((cells, row) =>
+          cells.map((value, col) => (
+            <div
+              key={`${row}-${col}`}
+              title={`${label(row, col)} — flops two pair or better ${(
+                value * 100
+              ).toFixed(1)}% of the time`}
+              style={cellStyle(value)}
+              className="flex aspect-square items-center justify-center text-[6px] leading-none text-ash-red/85 sm:text-[8px]"
+            >
+              {label(row, col)}
+            </div>
+          ))
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-        <Key tone="bg-act-fold/45" name="Pairs" count={COMBOS.pair} />
-        <Key tone="bg-act-call/22" name="Suited" count={COMBOS.suited} />
-        <Key tone="bg-act-raise/28" name="Offsuit" count={COMBOS.offsuit} />
+      <div className="mt-2.5 flex items-center gap-2">
+        <span className="tabular text-[9px] text-muted">
+          {(FLOP_STRENGTH_MIN * 100).toFixed(0)}%
+        </span>
+        <span
+          className="h-1.5 flex-1"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, color-mix(in oklab, var(--color-deep-red) 8%, var(--color-charcoal)), var(--color-deep-red))",
+          }}
+        />
+        <span className="tabular text-[9px] text-muted">
+          {(FLOP_STRENGTH_MAX * 100).toFixed(0)}%
+        </span>
       </div>
+      <p className="mt-2 text-[9px] leading-relaxed text-muted">
+        Shaded by how often the hand flops two pair or better. All 19,600 flops
+        enumerated for each of the 169 hands. Not an EV estimate and not a
+        range.
+      </p>
     </div>
-  );
-}
-
-function Key({ tone, name, count }: { tone: string; name: string; count: number }) {
-  return (
-    <span className="flex items-center gap-2">
-      <span className={`h-2.5 w-2.5 ${tone}`} />
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{name}</span>
-      <span className="tabular text-[11px] text-primary">{count}</span>
-    </span>
   );
 }
