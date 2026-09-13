@@ -56,11 +56,20 @@ export default function PokerPage() {
           <div className="spotlight-glow" />
 
           <div className="relative flex w-full justify-center pb-6">
-            {/* Felt, and the rail around it. The ellipse sits low and wide so
-                the hand rests on the near edge of the table rather than
-                hovering over a dark shape. */}
-            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] bg-[radial-gradient(58%_68%_at_50%_50%,rgba(19,92,46,0.85)_0%,rgba(8,48,26,0.75)_52%,transparent_78%)] shadow-[inset_0_0_70px_rgba(0,0,0,0.75)]" />
-            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] border border-gold-leaf/15" />
+            {/* The table, and the light on it.
+                This was a dark ellipse at first, which was wrong twice over:
+                it painted an opaque shape ON TOP of a lit room, so the table
+                came out darker than the floor and read as a hole. A table
+                under a lamp is the brightest thing in a club, not the
+                dimmest. So it is a pool of light now - rose overhead, violet
+                bleeding in from the room, nothing opaque anywhere. The
+                ellipse sits low and wide so the hand rests on the near edge
+                rather than hovering over a shape. */}
+            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] bg-[radial-gradient(56%_66%_at_50%_44%,rgba(255,61,129,0.15)_0%,rgba(139,92,246,0.11)_46%,transparent_78%)]" />
+            {/* No drawn rim. A border on the ellipse traced a hard rose arc
+                right across the header, and a drawn outline is the one thing
+                a pool of light does not have. What is left is the glow. */}
+            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] shadow-[0_0_60px_-20px_rgba(255,61,129,0.55)]" />
 
             {/* Shadow the hand casts onto the felt. */}
             <div className="absolute bottom-8 left-1/2 h-8 w-64 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
@@ -82,7 +91,7 @@ export default function PokerPage() {
           <span className="mt-14 text-[10px] uppercase tracking-[0.3em] text-secondary">
             Probability in Practice
           </span>
-          <h1 className="mt-4 font-display text-6xl font-light tracking-wing text-rare sm:text-7xl">
+          <h1 className="neon-glow mt-4 font-display text-6xl font-light italic tracking-wing text-rare sm:text-7xl">
             Poker Lab
           </h1>
           <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-secondary">

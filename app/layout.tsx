@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono, Cormorant_Garamond } from "next/font/google";
+import { Open_Sans, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
-// Three families, and only three. Geist carries every piece of UI text in both
-// wings, JetBrains Mono carries every digit anywhere on the site, and Cormorant
-// exists solely so the poker room does not sound like the workbench. A fourth
-// family is a bug.
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Three families, and only three. A fourth is a bug.
+//
+// Open Sans and Source Serif are the pair Carnegie Mellon publishes as its own
+// typefaces, and both are open-licensed - Open Sans under Apache 2.0, Source
+// Serif under the SIL Open Font License - so using them is a typography
+// decision and not a claim on anybody's brand. They are also simply the better
+// pairing for this: a humanist sans that survives being set at ten pixels next
+// to a serif with enough range to be a light neon sign in one room and a
+// bold broadsheet headline in the other.
+//
+// The old set was Geist, JetBrains Mono and Cormorant Garamond. Cormorant is
+// gone because Source Serif covers the display job in both wings, and one face
+// doing two jobs beats two faces doing one each.
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
 });
 
+// Digits only. Never body text.
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  weight: ["300", "400", "600"],
+// The display face. Italics are loaded because the poker room uses them.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   style: ["normal", "italic"],
   subsets: ["latin"],
 });
@@ -33,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${jetbrainsMono.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${openSans.variable} ${jetbrainsMono.variable} ${sourceSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-surface text-primary">{children}</body>
     </html>

@@ -104,7 +104,9 @@ export default function Home() {
         <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
           Computational Mathematics
         </span>
-        <h1 className="mt-6 text-6xl font-medium tracking-tight sm:text-8xl">CMQuant</h1>
+        <h1 className="mt-6 font-display text-6xl font-semibold tracking-tight sm:text-8xl">
+          CMQuant
+        </h1>
         <p className="mt-7 max-w-xl text-base leading-relaxed text-secondary">
           Sixty-second games for mental arithmetic, estimation and probability.
           Every run comes out of a seed, so you can hand the exact questions you
@@ -152,7 +154,7 @@ export default function Home() {
           <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
             Seven games
           </span>
-          <h2 className="mt-4 text-3xl font-medium tracking-tight">
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight">
             The rest of it
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">

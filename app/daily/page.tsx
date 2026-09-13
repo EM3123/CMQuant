@@ -49,7 +49,7 @@ export default function DailyPage() {
         <Label>Daily challenge</Label>
         <p className="tabular mt-2 text-[11px] text-muted">{dayKey}</p>
 
-        <h1 className="mt-6 text-5xl font-medium tracking-tight sm:text-6xl">
+        <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight sm:text-6xl">
           {game.name}
         </h1>
         <p className="mt-4 max-w-md text-sm leading-relaxed text-secondary">

@@ -12,9 +12,11 @@
 
    Wings:
      data-wing="comp"     the workbench. Silver on black, hairline grid,
-                          zero radius, maximum density.
-     data-wing="poker"    the back room. Pitch black, red ambient light,
-                          gold leaf headers, felt fading into the corners.
+                          zero radius, maximum density, engraved dragons in
+                          the wallpaper.
+     data-wing="poker"    the club. Near-black with a violet cast, rose and
+                          violet lights hung in the room, beams drifting,
+                          soft radii, one neon sign per view.
 
    BEHAVIOR is deliberately absent. Its games are Phase 2 and it is hidden
    from launch navigation; a third wing block now would be dead code.
@@ -42,6 +44,16 @@
   --color-gold-leaf: #d4af37;
   --color-gold-thread: #fdb515;
   --color-felt-green: #03140b;
+
+  /* Nightclub. Three lights and a room to hang them in.
+     Neon rose is deliberately a cousin of Carnegie Red rather than an
+     unrelated pink - the club is a different room in the same building, not a
+     different site. Violet is the haze, ice is the counter-light that keeps
+     the whole screen from going warm and muddy. */
+  --color-neon-rose: #ff3d81;
+  --color-neon-violet: #8b5cf6;
+  --color-neon-ice: #67e8f9;
+  --color-club-night: #07050c;
 
   /* Functional data indicators. Identical in both wings on purpose - a number
      that means "up" must not change colour when you walk between rooms. */
@@ -74,7 +86,7 @@
   --color-accent-ink: var(--accent-ink);
   --color-rare: var(--rare);
 
-  --font-ui: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
   --font-numeric: var(--font-jetbrains-mono), ui-monospace, "SF Mono", monospace;
   --font-display: var(--display-family);
 
@@ -114,7 +126,7 @@
   --accent-ink: var(--color-scots-rose);
   --rare: var(--color-gold-thread);
 
-  --display-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --display-family: var(--font-source-serif), ui-serif, Georgia, serif;
 
   --radius-panel-raw: 0px;
   --radius-control-raw: 0px;
@@ -149,7 +161,7 @@
   --accent-ink: var(--color-scots-rose);
   --rare: var(--color-gold-thread);
 
-  --display-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --display-family: var(--font-source-serif), ui-serif, Georgia, serif;
 
   /* Rigid. Hairlines only. */
   --radius-panel-raw: 0px;
@@ -159,32 +171,41 @@
   --tracking-wing-raw: 0.01em;
 }
 
-/* --- POKER: the back room ------------------------------------------------ */
+/* --- POKER: the nightclub ------------------------------------------------
+   Not a green-felt back room any more. The room is nearly black with a violet
+   cast, the structure is made of light rather than of borders, and the one hot
+   colour is a neon rose that is a cousin of Carnegie Red.
+
+   The trap with a neon interface is that everything glows and nothing reads.
+   So exactly one element per view is allowed to be lit: text stays a cool
+   near-white, and the colour lives in the room behind it.
+   -------------------------------------------------------------------------- */
 [data-wing="poker"] {
-  --surface: var(--color-cmu-black);
-  --surface-raised: #0b0708;
-  --surface-sunken: #050203;
+  --surface: var(--color-club-night);
+  --surface-raised: #0e0a16;
+  --surface-sunken: #050309;
 
-  /* Borders recede here. The light does the structural work, not the rules. */
-  --hairline: color-mix(in oklab, var(--color-gold-leaf) 14%, transparent);
-  --hairline-strong: color-mix(in oklab, var(--color-gold-leaf) 30%, transparent);
+  /* Borders recede. Light does the structural work, not the rules. */
+  --hairline: color-mix(in oklab, var(--color-neon-violet) 20%, transparent);
+  --hairline-strong: color-mix(in oklab, var(--color-neon-rose) 34%, transparent);
 
-  --text-primary: #e8e4dc;
-  --text-secondary: #8b8d94;
-  --text-muted: color-mix(in oklab, #8b8d94 60%, transparent);
+  --text-primary: #f0ecf7;
+  --text-secondary: #9a93ae;
+  --text-muted: color-mix(in oklab, #9a93ae 58%, transparent);
 
   --accent: var(--color-carnegie-red);
   --accent-ink: var(--color-scots-rose);
-  --rare: var(--color-gold-leaf);
+  --rare: var(--color-neon-rose);
 
-  --display-family: var(--font-cormorant), ui-serif, Georgia, serif;
+  --display-family: var(--font-source-serif), ui-serif, Georgia, serif;
 
   /* Soft, organic, sitting in its own pool of light. */
   --radius-panel-raw: 14px;
   --radius-control-raw: 9999px;
-  --shadow-panel-raw: 0 24px 60px -12px rgb(0 0 0 / 0.9),
-    0 0 0 1px color-mix(in oklab, var(--color-gold-leaf) 10%, transparent);
-  --shadow-spot-raw: 0 0 80px -20px color-mix(in oklab, var(--color-carnegie-red) 60%, transparent);
+  --shadow-panel-raw: 0 24px 60px -12px rgb(0 0 0 / 0.92),
+    0 0 0 1px color-mix(in oklab, var(--color-neon-violet) 16%, transparent),
+    0 0 40px -24px color-mix(in oklab, var(--color-neon-rose) 70%, transparent);
+  --shadow-spot-raw: 0 0 80px -20px color-mix(in oklab, var(--color-neon-rose) 60%, transparent);
   --tracking-wing-raw: 0.08em;
 }
 
@@ -204,8 +225,9 @@
 body {
   background: var(--surface);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Digits must not change width as they count. A timer that jitters reads as
@@ -258,24 +280,170 @@ body {
   background-position: center center;
 }
 
-/* POKER: felt fading into the dark corners, plus a warm overhead lamp.
-   Two radials and a vignette, no images. */
+/* POKER: a club. Three coloured lights hung in a black room, and a floor that
+   catches them. Still no images - four radials and a vignette.
+
+   Every value here is low. Neon reads as neon because of what surrounds it, so
+   the wash tops out around fifteen per cent; push these up and the page turns
+   into a purple bruise with unreadable text on it. */
 @utility wing-ambient {
-  /* The red is a lamp, not a paint job. Kept low so it reads as light in the
-     room rather than a maroon wash across the whole page. */
-  background-image: radial-gradient(
-      90% 55% at 50% -8%,
-      color-mix(in oklab, var(--color-carnegie-red) 13%, transparent) 0%,
-      transparent 62%
-    ),
+  /* TWO THINGS HERE WERE LEARNED THE HARD WAY.
+
+     First, layer order. In background-image the first layer is the one on
+     top. The vignette was written last, which put it underneath every light
+     in the room, so the corners stayed bright while the middle stayed
+     near-black.
+
+     Second, radial lights alone make an oval. Two hot spots in the top
+     corners with a vignette behind them produced a dark ellipse in a purple
+     frame - the eye reads the boundary between lit and unlit as an object.
+     The fix is the linear haze below: a wash with no centre cannot draw a
+     shape, so it fills the gap between the two lamps and the oval stops
+     existing. */
+  background-image:
+    /* The room falling away at the corners. Three stops, not two: a radial
+       that goes straight from transparent to black draws a visible ring at
+       the handover, and a ring on a dark page reads as an object. */
     radial-gradient(
-      100% 55% at 50% 104%,
-      color-mix(in oklab, var(--color-felt-green) 92%, #0b3a1e) 0%,
+      130% 100% at 50% 30%,
+      transparent 0%,
+      transparent 44%,
+      rgb(0 0 0 / 0.22) 70%,
+      rgb(0 0 0 / 0.62) 100%
+    ),
+    /* haze hanging under the ceiling */
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-neon-violet) 13%, transparent) 0%,
+      transparent 58%
+    ),
+    /* house light, violet, hung high and left of centre */
+    radial-gradient(
+      62% 46% at 20% -2%,
+      color-mix(in oklab, var(--color-neon-violet) 16%, transparent) 0%,
       transparent 70%
     ),
-    /* The vignette sits above the felt, so it is cut back at the bottom edge -
-       otherwise the green never survives to be seen. */
-      radial-gradient(150% 105% at 50% 42%, transparent 38%, rgb(0 0 0 / 0.88) 100%);
+    /* the hot one, rose, right of centre, so the room has a direction */
+    radial-gradient(
+      54% 40% at 79% 2%,
+      color-mix(in oklab, var(--color-neon-rose) 15%, transparent) 0%,
+      transparent 70%
+    ),
+    /* counter-light off the floor. Cold, and weak enough to be a suggestion -
+       it exists to stop the warm lights turning everything to mud. */
+    radial-gradient(
+      92% 42% at 50% 105%,
+      color-mix(in oklab, var(--color-neon-ice) 10%, transparent) 0%,
+      transparent 72%
+    );
+  background-attachment: fixed;
+}
+
+/* Two beams crossing the room, drifting. They sit behind everything and are
+   barely visible on their own - what they actually do is stop the ambient
+   gradients from looking like a static wallpaper. */
+@keyframes club-sweep-a {
+  0%,
+  100% {
+    transform: translate3d(-6%, 0, 0) rotate(-14deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(6%, 0, 0) rotate(-8deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes club-sweep-b {
+  0%,
+  100% {
+    transform: translate3d(5%, 0, 0) rotate(11deg);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(-5%, 0, 0) rotate(17deg);
+    opacity: 0.4;
+  }
+}
+
+@utility club-beams {
+  position: absolute;
+  inset: -25% -20%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+@utility club-beam-a {
+  position: absolute;
+  inset: 0 auto 0 18%;
+  width: 26%;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-neon-violet) 26%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(46px);
+  transform-origin: 50% 0%;
+  animation: club-sweep-a 19s var(--ease-wing) infinite;
+}
+
+@utility club-beam-b {
+  position: absolute;
+  inset: 0 20% 0 auto;
+  width: 20%;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-neon-rose) 24%, transparent) 0%,
+    transparent 68%
+  );
+  filter: blur(52px);
+  transform-origin: 50% 0%;
+  animation: club-sweep-b 24s var(--ease-wing) infinite;
+}
+
+/* COMP: dragons in the wallpaper.
+   Line art, no fill, sitting under the grid at an opacity where you notice it
+   on the second look and never on the first. Anything louder competes with the
+   numbers, and the numbers are the product. */
+@utility dragon-field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  color: var(--color-cmu-iron);
+  opacity: 0.16;
+
+  /* Punch the middle out. Without this a dragon runs straight through the
+     answer panel, and while the digits stay readable they stop being the only
+     thing on that part of the screen - which is the one thing a timed game
+     cannot afford. Dragons frame the page; they never cross the work. */
+  -webkit-mask-image: radial-gradient(
+    112% 80% at 50% 50%,
+    transparent 0%,
+    transparent 33%,
+    black 74%
+  );
+  mask-image: radial-gradient(
+    112% 80% at 50% 50%,
+    transparent 0%,
+    transparent 33%,
+    black 74%
+  );
+}
+
+@keyframes dragon-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+@utility dragon-drift {
+  animation: dragon-drift 26s ease-in-out infinite alternate;
 }
 
 /* A single component lit from above, the way one table is lit in a dark room. */
@@ -284,18 +452,34 @@ body {
   isolation: isolate;
 }
 
+/* One lamp over one table. This was a full-width wash at first, and stacked on
+   the room's own lights it turned the top half of the page into a flat violet
+   blob with cards floating in it. A spotlight has to be smaller than the thing
+   it is lighting is wide, or it is not a spotlight. */
 @utility spotlight-glow {
   position: absolute;
-  inset: -40% -20% auto -20%;
-  height: 160%;
+  inset: -18% 6% auto 6%;
+  height: 105%;
   z-index: -1;
   pointer-events: none;
   background: radial-gradient(
-    60% 50% at 50% 0%,
-    color-mix(in oklab, var(--color-carnegie-red) 35%, transparent) 0%,
-    transparent 70%
-  );
-  filter: blur(28px);
+      42% 36% at 46% 12%,
+      color-mix(in oklab, var(--color-neon-rose) 26%, transparent) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      34% 30% at 60% 20%,
+      color-mix(in oklab, var(--color-neon-violet) 22%, transparent) 0%,
+      transparent 70%
+    );
+  filter: blur(36px);
+}
+
+/* A lit sign. One per view - the moment two things glow, neither reads as
+   neon, they both just read as blurry. */
+@utility neon-glow {
+  text-shadow: 0 0 18px color-mix(in oklab, var(--rare) 55%, transparent),
+    0 0 46px color-mix(in oklab, var(--rare) 28%, transparent);
 }
 
 /* Hairline rules that read as instrument panel, not as CSS borders. */

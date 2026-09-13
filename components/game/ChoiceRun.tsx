@@ -267,7 +267,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         <h1
           className={
             game.intro.titleClassName ??
-            "mt-5 text-5xl font-medium tracking-tight sm:text-6xl"
+            "mt-5 font-display text-5xl font-semibold tracking-tight sm:text-6xl"
           }
         >
           {game.intro.title}

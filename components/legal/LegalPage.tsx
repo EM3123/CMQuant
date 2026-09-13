@@ -31,7 +31,7 @@ export function LegalPage({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <article className="mx-auto w-full max-w-2xl px-5 py-14">
-          <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="tabular mt-2 text-[11px] text-muted">Last updated {updated}</p>
           <div className="legal-prose mt-10 space-y-6 text-sm leading-relaxed text-secondary">
             {children}

@@ -84,7 +84,9 @@ export default function CompPage() {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
-          <h1 className="text-3xl font-medium tracking-tight">Computational Thinking</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Computational Thinking
+          </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
             Mental calculation, estimation and pattern recognition. Every drill
             runs for sixty seconds and comes out of a seed, so anyone holding that
