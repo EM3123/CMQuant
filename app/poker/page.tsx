@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DealtHand } from "@/components/poker/DealtHand";
+import { Wordmark } from "@/components/site/Wordmark";
 
 const TABLES = [
   {
@@ -39,9 +40,7 @@ export default function PokerPage() {
     <Wing wing="poker">
       <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-6 py-10">
         <nav className="flex shrink-0 items-center justify-between">
-          <Link href="/" className="text-sm font-medium tracking-tight">
-            CMQuant
-          </Link>
+          <Wordmark />
           <Link
             href="/comp"
             className="text-[10px] uppercase tracking-[0.3em] text-secondary transition-colors hover:text-primary"
@@ -55,29 +54,29 @@ export default function PokerPage() {
         <header className="relative mt-14 flex flex-col items-center text-center">
           <div className="spotlight-glow" />
 
-          <div className="relative flex w-full justify-center pb-6">
+          <div className="relative flex w-full justify-center pb-10">
             {/* The table, and the light on it.
-                This was a dark ellipse at first, which was wrong twice over:
-                it painted an opaque shape ON TOP of a lit room, so the table
-                came out darker than the floor and read as a hole. A table
-                under a lamp is the brightest thing in a club, not the
-                dimmest. So it is a pool of light now - rose overhead, violet
-                bleeding in from the room, nothing opaque anywhere. The
-                ellipse sits low and wide so the hand rests on the near edge
-                rather than hovering over a shape. */}
-            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] bg-[radial-gradient(56%_66%_at_50%_44%,rgba(255,61,129,0.15)_0%,rgba(139,92,246,0.11)_46%,transparent_78%)]" />
-            {/* No drawn rim. A border on the ellipse traced a hard rose arc
-                right across the header, and a drawn outline is the one thing
-                a pool of light does not have. What is left is the glow. */}
-            <div className="absolute inset-x-0 bottom-0 mx-auto h-56 w-full max-w-2xl rounded-[50%] shadow-[0_0_60px_-20px_rgba(255,61,129,0.55)]" />
+                Two earlier versions were wrong. The first painted an opaque
+                dark ellipse ON TOP of a lit room, so the table came out darker
+                than the floor and read as a hole - a table under a lamp is the
+                brightest thing in a club, not the dimmest. The second drew a
+                rim on it, and a hard rose arc across the header is the one
+                thing a pool of light does not have.
+                
+                The third mistake was geometry: at h-56 the ellipse was taller
+                than the row of cards, so it rose above them and the hand
+                floated in the middle of a glow instead of resting on it. It
+                sits low now, most of its height below the cards, so the near
+                edge of the light is the near edge of the table. */}
+            <div className="pointer-events-none absolute inset-x-0 -bottom-14 mx-auto h-40 w-full max-w-xl rounded-[50%] bg-[radial-gradient(58%_62%_at_50%_38%,rgba(255,61,129,0.17)_0%,rgba(139,92,246,0.12)_48%,transparent_78%)] shadow-[0_0_60px_-22px_rgba(255,61,129,0.5)]" />
 
-            {/* Shadow the hand casts onto the felt. */}
-            <div className="absolute bottom-8 left-1/2 h-8 w-64 -translate-x-1/2 rounded-[50%] bg-black/60 blur-xl" />
+            {/* Shadow the hand casts down onto it. */}
+            <div className="pointer-events-none absolute bottom-2 left-1/2 h-7 w-60 -translate-x-1/2 rounded-[50%] bg-black/65 blur-xl" />
 
             <DealtHand />
           </div>
 
-          <span className="mt-14 text-[10px] uppercase tracking-[0.3em] text-secondary">
+          <span className="mt-20 text-[10px] uppercase tracking-[0.3em] text-secondary">
             Probability in Practice
           </span>
           <h1 className="neon-glow mt-4 font-display text-6xl font-light italic tracking-wing text-rare sm:text-7xl">
@@ -85,8 +84,7 @@ export default function PokerPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-secondary">
             Nothing here is played for money. The cards are here because
-            probability is easier to learn when the numbers are attached to a
-            decision you have four seconds to make.
+            probability sticks when there is a decision attached to it.
           </p>
         </header>
 

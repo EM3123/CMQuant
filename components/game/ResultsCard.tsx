@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
+import { Wordmark } from "@/components/site/Wordmark";
 
 /**
  * This is the marketing budget.
@@ -98,7 +99,7 @@ export function ResultsCard({
         className="flex aspect-[4/5] w-full max-w-[360px] flex-col rounded-panel border border-hairline-strong bg-surface-sunken px-7 py-8 shadow-panel"
       >
         <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium tracking-tight text-primary">CMQuant</span>
+          <Wordmark href={null} />
           <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
             {gameName}
           </span>
@@ -201,9 +202,8 @@ export function ResultsCard({
           the part that is worth reading once, here, and never again. */}
       <MistakeReview mistakes={mistakes} />
 
-      <p className="max-w-xs text-center text-[11px] leading-relaxed text-muted">
-        The link carries this seed. Whoever opens it gets the same questions in
-        the same order.
+      <p className="max-w-xs text-center text-[11px] text-muted">
+        Whoever opens that link gets these questions, in this order.
       </p>
     </div>
   );

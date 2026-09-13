@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Wordmark } from "@/components/site/Wordmark";
 
 /**
  * Shell for the explainer pages.
@@ -29,9 +30,7 @@ export function LearnPage({
     <Wing wing="poker">
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-6 py-10">
         <nav className="flex shrink-0 items-center justify-between">
-          <Link href="/" className="text-sm font-medium tracking-tight">
-            CMQuant
-          </Link>
+          <Wordmark />
           <Link
             href="/poker"
             className="text-[10px] uppercase tracking-[0.3em] text-secondary transition-colors hover:text-rare"

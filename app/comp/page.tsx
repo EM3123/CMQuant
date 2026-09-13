@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wing, Label } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { BestCell } from "@/components/game/BestCell";
+import { Wordmark } from "@/components/site/Wordmark";
 
 const DRILLS = [
   {
@@ -67,9 +68,7 @@ export default function CompPage() {
     <Wing wing="comp">
       <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
         <div className="flex items-baseline gap-4">
-          <Link href="/" className="text-sm font-medium tracking-tight">
-            CMQuant
-          </Link>
+          <Wordmark />
           <Label>Comp / Computational Thinking</Label>
         </div>
         <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
@@ -88,9 +87,8 @@ export default function CompPage() {
             Computational Thinking
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
-            Mental calculation, estimation and pattern recognition. Every drill
-            runs for sixty seconds and comes out of a seed, so anyone holding that
-            seed gets the questions you got, in the order you got them.
+            Mental calculation, estimation and pattern recognition, sixty
+            seconds at a time.
           </p>
 
           <div className="mt-10 flex items-center justify-between border-b border-hairline pb-1.5">
@@ -159,9 +157,8 @@ export default function CompPage() {
             })}
           </div>
 
-          <p className="mt-8 text-[11px] leading-relaxed text-muted">
-            Bests are stored in this browser only. Nothing is uploaded, and there
-            is no account to make.
+          <p className="mt-8 text-[11px] text-muted">
+            Bests are stored in this browser. There is no account.
           </p>
         </div>
       </div>

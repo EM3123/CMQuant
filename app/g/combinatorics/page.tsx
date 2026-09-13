@@ -2,15 +2,14 @@ import Link from "next/link";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { CombinatoricsGame } from "@/components/combinatorics/CombinatoricsGame";
+import { Wordmark } from "@/components/site/Wordmark";
 
 export default function CombinatoricsPage() {
   return (
     <Wing wing="poker">
       <div className="flex min-h-dvh flex-col">
         <nav className="flex shrink-0 items-center justify-between px-5 py-3">
-          <Link href="/" className="text-sm font-medium tracking-tight">
-            CMQuant
-          </Link>
+          <Wordmark />
           <Link
             href="/poker"
             className="text-[10px] uppercase tracking-[0.3em] text-secondary transition-colors hover:text-rare"

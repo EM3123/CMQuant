@@ -525,6 +525,33 @@ body {
   animation: wing-rise 620ms var(--ease-wing) forwards;
 }
 
+/* Cards arriving on the Poker Lab table.
+
+   This was a Motion mount animation and it was the wrong tool twice over. A
+   fixed-delay entrance is what CSS keyframes are for, and - the part that
+   actually bit - a JavaScript animation is driven by the frame loop, so a page
+   that mounts in a throttled or hidden tab can leave the animation queued and
+   never ticked. The hand is the identity of that page; it stayed invisible.
+
+   A CSS animation is driven by the document timeline instead: it resolves to
+   the right point the moment the tab is looked at, and `both` fill mode holds
+   the last frame regardless. The reduced-motion clamp already covers it too,
+   which the Motion version had to opt into by hand. */
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-64px, 24px, 0) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility deal-in {
+  animation: deal-in 560ms var(--ease-wing) both;
+}
+
 /* --------------------------------------------------------------------------
    8. Challenge links
    A URL carrying a seed is somebody answering a challenge. They want the

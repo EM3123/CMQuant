@@ -7,6 +7,7 @@ import { ChallengeJump } from "@/components/site/ChallengeJump";
 import { ScrollProgress } from "@/components/site/ScrollProgress";
 import { Reveal, RevealList, RevealItem } from "@/components/site/Reveal";
 import { BestCell } from "@/components/game/BestCell";
+import { Wordmark } from "@/components/site/Wordmark";
 
 /**
  * Three screens: who built it, a game you can play without deciding to, and
@@ -83,7 +84,7 @@ export default function Home() {
       <ScrollProgress />
 
       <nav className="sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-hairline bg-surface/85 px-4 py-2 backdrop-blur-md">
-        <span className="text-sm font-medium tracking-tight">CMQuant</span>
+        <Wordmark href={null} />
         <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
           <Link href="/daily" className="text-rare transition-colors hover:text-primary">
             Daily
@@ -107,13 +108,13 @@ export default function Home() {
         <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
           Computational Mathematics
         </span>
-        <h1 className="mt-6 font-display text-6xl font-semibold tracking-tight sm:text-8xl">
-          CMQuant
+        <h1 className="mt-6">
+          <Wordmark size="xl" href={null} />
         </h1>
         <p className="mt-7 max-w-xl text-base leading-relaxed text-secondary">
-          Sixty-second games for mental arithmetic, estimation and probability.
-          Every run comes out of a seed, so you can hand the exact questions you
-          played to somebody else and find out who is faster.
+          Sixty-second games for mental arithmetic, estimation and
+          probability. Every run has a seed, so you can hand somebody the exact
+          questions you played and find out who is faster.
         </p>
 
         <Reveal delay={0.15} className="mt-16 flex items-start gap-12 sm:gap-20">
@@ -154,16 +155,12 @@ export default function Home() {
       {/* ---------------------------------------------------------------- */}
       <section id="games" className="border-t border-hairline px-4 py-20">
         <div className="mx-auto w-full max-w-3xl">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
+          <h2 className="font-display text-3xl font-semibold tracking-tight">
             Seven games
-          </span>
-          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight">
-            The rest of it
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
-            Five in Comp for arithmetic and recall, two in Poker Lab where the
-            same probability gets attached to a decision. Bests are stored in
-            this browser and nowhere else.
+            Five in Comp for arithmetic and recall. Two in Poker Lab, where the
+            same probability is attached to a decision.
           </p>
 
           <div className="mt-10 text-xs">

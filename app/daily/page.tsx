@@ -13,6 +13,7 @@ import {
   formatCountdown,
   type DailyResult,
 } from "@/lib/daily";
+import { Wordmark } from "@/components/site/Wordmark";
 
 /**
  * One puzzle a day, one attempt, the same for everybody.
@@ -32,9 +33,7 @@ export default function DailyPage() {
   return (
     <Wing wing="comp">
       <nav className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
-        <Link href="/" className="text-sm font-medium tracking-tight">
-          CMQuant
-        </Link>
+        <Wordmark />
         <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
           <Link href="/comp" className="transition-colors hover:text-primary">
             Comp
@@ -53,8 +52,8 @@ export default function DailyPage() {
           {game.name}
         </h1>
         <p className="mt-4 max-w-md text-sm leading-relaxed text-secondary">
-          {game.blurb} Everyone gets this puzzle today, and everyone gets the
-          same questions in the same order. One attempt.
+          {game.blurb} Everyone in the world gets this one today, and you
+          get one attempt at it.
         </p>
 
         {result ? (
