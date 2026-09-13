@@ -1,7 +1,8 @@
 "use client";
 
 import { ChoiceRun, type ChoiceGame } from "@/components/game/ChoiceRun";
-import { PlayingCard, CardFan } from "@/components/cards/PlayingCard";
+import { CardFan } from "@/components/cards/PlayingCard";
+import { Felt } from "@/components/poker/Felt";
 import {
   questionAt,
   validate,
@@ -26,23 +27,9 @@ const OUTS: ChoiceGame<OutsQuestion> = {
   difficultyOf: (q) => q.difficulty,
   renderPrompt: (q) => (
     <div className="flex flex-col items-center gap-5">
-      <div className="flex flex-col items-center gap-2">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">Board</span>
-        <div className="flex gap-1.5">
-          {q.board.map((code) => (
-            <PlayingCard key={code} code={code} size="sm" />
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex gap-1.5">
-          {q.hole.map((code) => (
-            <PlayingCard key={code} code={code} size="sm" />
-          ))}
-        </div>
-        <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">You</span>
-      </div>
+      {/* No pot on this table. Outs is a counting question, not a pricing one,
+          and chips in the middle would imply money is part of the answer. */}
+      <Felt board={q.board} hero={q.hole} />
 
       <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
         One card to come. How many of the 46 you cannot see give you{" "}

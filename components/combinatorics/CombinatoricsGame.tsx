@@ -1,7 +1,8 @@
 "use client";
 
 import { ChoiceRun, type ChoiceGame } from "@/components/game/ChoiceRun";
-import { PlayingCard, CardFan } from "@/components/cards/PlayingCard";
+import { CardFan } from "@/components/cards/PlayingCard";
+import { Felt } from "@/components/poker/Felt";
 import {
   questionAt,
   validate,
@@ -26,14 +27,10 @@ const COMBINATORICS: ChoiceGame<CombinatoricsQuestion> = {
   difficultyOf: (q) => q.difficulty,
   renderPrompt: (q) => (
     <div className="flex flex-col items-center gap-5">
-      <div className="flex flex-col items-center gap-2">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">Board</span>
-        <div className="flex gap-1.5">
-          {q.board.map((code) => (
-            <PlayingCard key={code} code={code} size="sm" />
-          ))}
-        </div>
-      </div>
+      {/* No hole cards: the question is about what somebody ELSE can hold, so
+          showing yours would put a second hand in the frame that has nothing
+          to do with the count. */}
+      <Felt board={q.board} />
 
       <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
         How many combinations of{" "}

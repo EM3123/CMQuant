@@ -44,25 +44,62 @@ export default function DailyPage() {
         </div>
       </nav>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center">
-        <Label>Daily challenge</Label>
-        <p className="tabular mt-2 text-[11px] text-muted">{dayKey}</p>
+      {/* This was a heading, a sentence and a button centred in a screen with
+          nothing else on it, and it read as unfinished because it was. A daily
+          is a fixture: it wants a date, a countdown and a slot number, laid
+          out like a board rather than like a landing page. */}
+      <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col justify-center px-5 py-10">
+        <div className="border border-hairline-strong">
+          <div className="flex items-baseline justify-between border-b border-hairline px-4 py-2">
+            <Label>Daily challenge</Label>
+            <span className="tabular text-[10px] text-muted">{dayKey}</span>
+          </div>
 
-        <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight sm:text-6xl">
-          {game.name}
-        </h1>
-        <p className="mt-4 max-w-md text-sm leading-relaxed text-secondary">
-          {game.blurb} Everyone in the world gets this one today, and you
-          get one attempt at it.
-        </p>
+          <div className="grid divide-y divide-hairline sm:grid-cols-[1.4fr_1fr] sm:divide-x sm:divide-y-0">
+            <div className="px-5 py-6">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
+                Today&apos;s game
+              </span>
+              <h1 className="mt-2 font-display text-3xl font-medium uppercase tracking-wing text-primary sm:text-4xl">
+                {game.name}
+              </h1>
+              <p className="mt-4 text-[12px] leading-relaxed text-secondary">
+                {game.blurb} Everyone in the world gets this one today, and you
+                get one attempt at it.
+              </p>
+              <p className="tabular mt-4 text-[10px] text-muted">seed {seed}</p>
+            </div>
 
-        {result ? (
-          <div className="mt-10 w-full max-w-xs border border-hairline-strong px-6 py-7">
-            <Label>Your run</Label>
-            <p className="tabular mt-3 text-5xl text-rare">
-              {result.points.toLocaleString()}
-            </p>
-            <div className="mt-5 grid grid-cols-3 border-t border-hairline pt-4">
+            <div className="flex flex-col justify-between px-5 py-6">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
+                  {result ? "Next challenge" : "Resets in"}
+                </span>
+                <p className="tabular mt-2 text-3xl leading-none text-primary">
+                  {countdown}
+                </p>
+              </div>
+
+              {result ? (
+                <div className="mt-6">
+                  <Label>Your run</Label>
+                  <p className="tabular mt-1 text-4xl leading-none text-rare">
+                    {result.points.toLocaleString()}
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  href={`${game.path}?seed=${encodeURIComponent(seed)}`}
+                  className="mt-6 block border border-hairline-strong px-6 py-3 text-center text-xs uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:bg-accent/10 hover:text-accent-ink"
+                >
+                  Play today
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {result && (
+            <div className="grid grid-cols-3 divide-x divide-hairline border-t border-hairline">
               <Stat value={`${result.correct}/${result.attempted}`} label="Correct" />
               <Stat
                 value={`${
@@ -74,30 +111,25 @@ export default function DailyPage() {
               />
               <Stat value={String(result.bestStreak)} label="Streak" />
             </div>
-          </div>
-        ) : (
-          <Link
-            href={`${game.path}?seed=${encodeURIComponent(seed)}`}
-            className="mt-10 border border-hairline-strong px-12 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
-          >
-            Play today
-          </Link>
-        )}
-
-        <p className="tabular mt-8 text-[11px] text-muted">
-          {result ? "Next challenge in " : "Resets in "}
-          {countdown}
-        </p>
+          )}
+        </div>
 
         {result && (
-          <ShareButton
-            dayKey={dayKey}
-            game={game.name}
-            path={game.path}
-            seed={seed}
-            result={result}
-          />
+          <div className="mt-4 flex justify-center">
+            <ShareButton
+              dayKey={dayKey}
+              game={game.name}
+              path={game.path}
+              seed={seed}
+              result={result}
+            />
+          </div>
         )}
+
+        <p className="mt-4 text-center text-[10px] leading-relaxed text-muted">
+          One puzzle a day, one attempt, the same questions for everyone. The
+          day turns over at midnight UTC.
+        </p>
       </div>
 
       <SiteFooter />
@@ -189,7 +221,7 @@ function ShareButton({
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1 py-3">
       <span className="tabular text-lg text-primary">{value}</span>
       <span className="text-[9px] uppercase tracking-[0.16em] text-secondary">{label}</span>
     </div>

@@ -3,9 +3,6 @@ import { Wing, Label } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
-import { CodePanel } from "@/components/comp/CodePanel";
-import { RampPlot } from "@/components/comp/RampPlot";
-import { SystemOutput } from "@/components/comp/SystemOutput";
 
 const DRILLS = [
   {
@@ -67,14 +64,15 @@ const DRILLS = [
 ];
 
 /**
- * The quant matrix, per design.md Realm 1.
+ * The drill index. Seven games, and nothing above them.
  *
- * Not a page with sections - a screen divided into panels that butt against
- * each other and share their borders. Code workspace top left, analytics top
- * right, execution log below, drill index filling the rest. Every panel holds
- * something true: the source is read off disk, the plot calls the same
- * difficulty functions the games call, and the log is measured during the
- * build.
+ * This briefly carried three reference panels - a source viewer, a difficulty
+ * plot and a build log - stacked above the games. Every one of them was true
+ * and none of them was a game, and the effect was a documentation page with
+ * the product underneath it. They are gone.
+ *
+ * The palette stays where design.md put it: deep void, dark iron rules, matte
+ * silver, zero radius, and the two data colours.
  */
 export default function CompPage() {
   return (
@@ -95,26 +93,18 @@ export default function CompPage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {/* Top band: source on the left, the one plot this product has on the
-            right. They share the border between them. */}
-        <div className="grid divide-y divide-hairline border-b border-hairline lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:divide-x lg:divide-y-0">
-          <CodePanel file="lib/games/equalize.ts" from={226} to={252} />
-          <RampPlot />
-        </div>
-
-        {/* Second band: the log, and the index it is talking about. */}
-        <div className="grid divide-y divide-hairline lg:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] lg:divide-x lg:divide-y-0">
-          <SystemOutput />
-
+        <div className="mx-auto w-full max-w-3xl">
           <div>
-            <div className="flex items-baseline justify-between border-b border-hairline px-3 py-1.5">
-              <Label>Drill index</Label>
+            <div className="flex items-baseline justify-between border-b border-hairline-strong px-3 pb-2 pt-8">
+              <h1 className="font-display text-2xl font-medium uppercase tracking-wing text-primary">
+                Computational Thinking
+              </h1>
               <Label>5 live / 7 total</Label>
             </div>
 
             {/* A grid rather than a table, because every live row has to be a
                 single link and an anchor cannot wrap a table row. */}
-            <div className="text-[11px]">
+            <div className="text-sm">
               <div className="grid grid-cols-[1fr_3.5rem_4.5rem] gap-x-3 border-b border-hairline px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] text-secondary sm:grid-cols-[3rem_1fr_4.5rem_5rem]">
                 <span className="hidden sm:block">ID</span>
                 <span>Drill</span>
@@ -125,7 +115,7 @@ export default function CompPage() {
               {DRILLS.map((drill) => {
                 const row = (
                   <div
-                    className={`grid grid-cols-[1fr_3.5rem_4.5rem] items-baseline gap-x-3 border-b border-hairline px-3 py-2 sm:grid-cols-[3rem_1fr_4.5rem_5rem] ${
+                    className={`grid grid-cols-[1fr_3.5rem_4.5rem] items-baseline gap-x-3 border-b border-hairline px-3 py-5 sm:grid-cols-[3rem_1fr_4.5rem_5rem] ${
                       drill.href ? "group hover:bg-accent/10" : "opacity-50"
                     }`}
                   >

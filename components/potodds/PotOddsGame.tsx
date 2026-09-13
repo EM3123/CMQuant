@@ -20,7 +20,8 @@ import {
   accuracyMultiplier,
   finalScore,
 } from "@/lib/scoring";
-import { PlayingCard, CardFan } from "@/components/cards/PlayingCard";
+import { CardFan } from "@/components/cards/PlayingCard";
+import { Felt } from "@/components/poker/Felt";
 import { deal } from "@/lib/cards";
 
 type Phase = "idle" | "running" | "done";
@@ -300,60 +301,42 @@ export function PotOddsGame() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-4 pb-8">
-        {/* The board. */}
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">Board</span>
-          <div className="flex gap-1.5">
-            {table.slice(2).map((code) => (
-              <PlayingCard key={code} code={code} size="sm" />
-            ))}
-          </div>
-        </div>
-
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-4 pb-6">
         <div className="relative flex flex-col items-center">
-          <span className="tabular text-5xl leading-none text-primary sm:text-6xl">
+          <span className="tabular text-4xl leading-none text-primary sm:text-5xl">
             {formatClock(remaining)}
           </span>
           {run.feedback && !run.feedback.ok && (
             <span
               key={run.feedback.id}
-              className="rise-away tabular absolute -right-14 top-2 text-xl text-data-neg"
+              className="rise-away tabular absolute -right-14 top-1 text-xl text-data-neg"
             >
               −2s
             </span>
           )}
         </div>
 
-        {/* The spot.
-            This used to read "POT 900 / BET TO YOU 850". On a screen full of
-            percentages a slash between two numbers reads as division, so the
-            first thing a player saw was 900 ÷ 850. Now it is a labelled ledger
-            with the numbers right-aligned.
-
-            The pot after the call is deliberately NOT shown. Building that
-            denominator - remembering your own call belongs in it - is the
-            entire skill; printing it would answer the question. */}
-        <div className="relative w-full max-w-sm">
-          <div className="absolute inset-x-0 -inset-y-5 rounded-[50%] bg-[radial-gradient(60%_70%_at_50%_50%,rgba(11,58,30,0.5),transparent_70%)]" />
-          <div className="relative rounded-panel border border-hairline bg-surface-raised/70 px-6 py-5 backdrop-blur-md">
-            <Line label="Pot" value={question!.pot} />
-            <Line label="They bet" value={question!.bet} tone="accent" />
-            <div className="my-3 h-px bg-hairline" />
-            <Line label="To call" value={question!.bet} strong />
-          </div>
-        </div>
+        {/* The spot, on a table.
+            The pot after the call is deliberately NOT shown anywhere. Building
+            that denominator - remembering that your own call belongs in it - is
+            the entire skill, and printing it would answer the question. */}
+        <Felt
+          board={table.slice(2)}
+          hero={table.slice(0, 2)}
+          pot={question!.pot}
+          bet={question!.bet}
+        />
 
         <p className="max-w-sm text-center text-sm leading-relaxed text-secondary">
           How often do you need to win for that call to break even?
         </p>
 
-        <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid w-full max-w-2xl grid-cols-2 gap-2.5 sm:grid-cols-4">
           {question!.options.map((option, i) => (
             <button
               key={i}
               onClick={() => answer(i)}
-              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-5 backdrop-blur-md transition-colors hover:border-rare"
+              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-4 transition-colors hover:border-rare"
             >
               <span className="tabular text-2xl text-primary">{formatPercent(option)}</span>
               <kbd className="tabular rounded-control border border-accent/40 bg-accent/10 px-2 text-[10px] text-accent-ink">
@@ -361,15 +344,6 @@ export function PotOddsGame() {
               </kbd>
             </button>
           ))}
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex gap-1.5">
-            {table.slice(0, 2).map((code) => (
-              <PlayingCard key={code} code={code} size="sm" />
-            ))}
-          </div>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">You</span>
         </div>
       </div>
 
@@ -389,31 +363,6 @@ function formatClock(ms: number): string {
 
 /** One row of the spot. Label left, number right, tabular so the columns of
  *  digits line up between rows and between questions. */
-function Line({
-  label,
-  value,
-  tone,
-  strong = false,
-}: {
-  label: string;
-  value: number;
-  tone?: "accent";
-  strong?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-6 py-1">
-      <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">{label}</span>
-      <span
-        className={`tabular ${strong ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"} ${
-          tone === "accent" ? "text-accent-ink" : "text-primary"
-        }`}
-      >
-        {value.toLocaleString()}
-      </span>
-    </div>
-  );
-}
-
 function Stat({
   label,
   value,
