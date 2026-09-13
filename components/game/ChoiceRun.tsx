@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import { Rail, Tape } from "@/components/game/Rail";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -25,6 +26,8 @@ import {
  */
 export type ChoiceGame<Q> = {
   name: string;
+  /** Three-letter code for the status rail, e.g. APX. */
+  code: string;
   /** localStorage key for this game's personal best. */
   storageKey: string;
   /** Route a challenge link should open. */
@@ -82,6 +85,8 @@ type RunState = {
   shownAt: number;
   mistakes: MistakeTally;
   feedback: { id: number; ok: boolean } | null;
+  /** The tape. Every answer with how long it took, oldest first. */
+  tape: { id: number; ok: boolean; ms: number }[];
 };
 
 const EMPTY: RunState = {
@@ -97,6 +102,7 @@ const EMPTY: RunState = {
   shownAt: 0,
   mistakes: {},
   feedback: null,
+  tape: [],
 };
 
 type Action =
@@ -158,6 +164,7 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
           endsAt,
           shownAt: action.now,
           feedback: { id: state.index, ok },
+          tape: [...state.tape, { id: state.index, ok, ms: elapsed }],
         };
 
         return endsAt <= action.now ? { ...next, phase: "done" } : next;
@@ -314,6 +321,10 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
     );
   }
 
+  const accuracy = run.attempted
+    ? Math.round((run.correct / run.attempted) * 100)
+    : 0;
+
   return (
     <div className="relative flex flex-1 flex-col">
       {run.feedback && (
@@ -323,43 +334,45 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         />
       )}
 
-      <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
-        <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-            {game.name}
-          </span>
-          <span className="tabular text-[10px] text-muted">
-            d{String(question ? game.difficultyOf(question) : 1).padStart(2, "0")}
-          </span>
-        </div>
-        <div className="flex items-center gap-6">
-          <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat
-            label="Streak"
-            value={String(run.streak)}
-            tone={run.streak >= 5 ? "pos" : undefined}
-          />
-          {challenge && challenge.target > 0 && (
-            <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
-          )}
-        </div>
-      </header>
+      <Rail
+        code={game.code}
+        remainingMs={remaining}
+        totalMs={game.roundMs}
+        penalty={
+          run.feedback && !run.feedback.ok
+            ? { id: run.feedback.id, label: `−${Math.round(game.wrongPenaltyMs / 1000)}s` }
+            : null
+        }
+        cells={[
+          {
+            label: "Diff",
+            value: `d${String(question ? game.difficultyOf(question) : 1).padStart(2, "0")}`,
+          },
+          { label: "Q", value: String(run.index + 1) },
+          { label: "Score", value: run.points.toLocaleString() },
+          {
+            label: "Streak",
+            value: String(run.streak),
+            tone: run.streak >= 5 ? "pos" : undefined,
+          },
+          {
+            label: "Acc",
+            value: run.attempted ? `${accuracy}%` : "—",
+            tone: run.attempted && accuracy < 70 ? "neg" : undefined,
+          },
+          ...(challenge && challenge.target > 0
+            ? [
+                {
+                  label: "Target",
+                  value: challenge.target.toLocaleString(),
+                  tone: "accent" as const,
+                },
+              ]
+            : []),
+        ]}
+      />
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-9 px-4">
-        <div className="relative">
-          <span className="tabular text-6xl leading-none text-primary">
-            {formatClock(remaining)}
-          </span>
-          {run.feedback && !run.feedback.ok && (
-            <span
-              key={run.feedback.id}
-              className="rise-away tabular absolute -right-16 top-2 text-2xl text-data-neg"
-            >
-              −{Math.round(game.wrongPenaltyMs / 1000)}s
-            </span>
-          )}
-        </div>
-
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-4 py-4">
         {game.renderPrompt(question!)}
 
         <div className={game.optionsClassName}>
@@ -367,10 +380,10 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
             <button
               key={i}
               onClick={() => answer(i)}
-              className="group flex flex-col items-center gap-2 rounded-panel border border-hairline bg-surface-raised px-3 py-4 transition-colors hover:border-accent-ink"
+              className="group relative flex flex-col items-center gap-2 border border-hairline bg-surface-raised px-3 py-4 transition-colors hover:border-accent-ink hover:bg-accent/[0.07]"
             >
               {game.renderOption(question!, i)}
-              <kbd className="tabular rounded-control border border-accent/40 bg-accent/10 px-2 text-[10px] text-accent-ink">
+              <kbd className="tabular absolute right-1 top-1 px-1 text-[9px] text-muted">
                 {i + 1}
               </kbd>
             </button>
@@ -378,35 +391,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         </div>
       </div>
 
-      <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        {game.intro.hint}
-      </footer>
-    </div>
-  );
-}
-
-function formatClock(ms: number): string {
-  const seconds = ms / 1000;
-  if (seconds <= 10) return (Math.ceil(ms / 100) / 10).toFixed(1);
-  const total = Math.ceil(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "pos" | "accent";
-}) {
-  const colour =
-    tone === "pos" ? "text-data-pos" : tone === "accent" ? "text-accent-ink" : "text-primary";
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
-      <span className={`tabular text-sm ${colour}`}>{value}</span>
+      <Tape entries={run.tape} hint={game.intro.hint} />
     </div>
   );
 }

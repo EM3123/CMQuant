@@ -16,6 +16,7 @@ import {
 
 const COMBINATORICS: ChoiceGame<CombinatoricsQuestion> = {
   name: "Combinatorics",
+  code: "CMB",
   storageKey: "cmquant:combinatorics:best",
   challengePath: "/g/combinatorics",
   roundMs: ROUND_MS,

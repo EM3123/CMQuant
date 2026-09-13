@@ -17,6 +17,7 @@ export function Wing({
   children,
   className = "",
   scroll = false,
+  wallpaper = "engraved",
 }: {
   wing: WingName;
   children: ReactNode;
@@ -24,6 +25,13 @@ export function Wing({
   /** COMP only. Opts out of the fixed canvas for pages that are meant to
    *  scroll, like the landing page. */
   scroll?: boolean;
+  /**
+   * COMP only. `engraved` is the line-art dragon field that textures the
+   * interior pages. The landing page passes `none` and paints the real brand
+   * artwork behind its own hero instead - two different dragons on one screen
+   * is one dragon too many.
+   */
+  wallpaper?: "engraved" | "none";
 }) {
   // `isolate` on the COMP root matters more than it looks. The dragon layer is
   // positioned, and a positioned element paints above its static siblings no
@@ -51,7 +59,7 @@ export function Wing({
         scroll ? "min-h-dvh" : "h-dvh overflow-hidden"
       } ${className}`}
     >
-      <DragonField />
+      {wallpaper === "engraved" && <DragonField />}
       {children}
     </div>
   );

@@ -5,6 +5,7 @@ import { Founder } from "@/components/site/Founder";
 import { PlaySection } from "@/components/site/PlaySection";
 import { ChallengeJump } from "@/components/site/ChallengeJump";
 import { ScrollProgress } from "@/components/site/ScrollProgress";
+import { HeroDragon } from "@/components/site/HeroDragon";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
 
@@ -78,7 +79,7 @@ const GAMES = [
 
 export default function Home() {
   return (
-    <Wing wing="comp" scroll>
+    <Wing wing="comp" scroll wallpaper="none">
       <ChallengeJump />
       <ScrollProgress />
 
@@ -102,8 +103,9 @@ export default function Home() {
       {/* ---------------------------------------------------------------- */}
       <section
         data-hero
-        className="flex min-h-[calc(100dvh-2.5rem)] flex-col items-center justify-center px-6 py-16 text-center"
+        className="relative isolate flex min-h-[calc(100dvh-2.5rem)] flex-col items-center justify-center px-6 py-16 text-center"
       >
+        <HeroDragon />
         <span className="text-[10px] uppercase tracking-[0.3em] text-secondary">
           Computational Mathematics
         </span>

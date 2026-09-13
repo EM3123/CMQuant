@@ -12,6 +12,7 @@ import {
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import { Rail, Tape } from "@/components/game/Rail";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -34,6 +35,8 @@ type RunState = {
   shownAt: number;
   /** Bumped on every answer so the flash overlay remounts and replays. */
   feedback: { id: number; ok: boolean } | null;
+  /** The tape. Every answer with how long it took, oldest first. */
+  tape: { id: number; ok: boolean; ms: number }[];
 };
 
 const EMPTY: RunState = {
@@ -48,6 +51,7 @@ const EMPTY: RunState = {
   endsAt: 0,
   shownAt: 0,
   feedback: null,
+  tape: [],
 };
 
 type Action =
@@ -93,6 +97,7 @@ function reducer(state: RunState, action: Action): RunState {
         endsAt,
         shownAt: action.now,
         feedback: { id: state.index, ok },
+        tape: [...state.tape, { id: state.index, ok, ms: elapsed }],
       };
 
       return endsAt <= action.now ? { ...next, phase: "done" } : next;
@@ -240,6 +245,10 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
     );
   }
 
+  const accuracy = run.attempted
+    ? Math.round((run.correct / run.attempted) * 100)
+    : 0;
+
   return (
     <div className="relative flex flex-1 flex-col">
       {/* Feedback layer. Keyed on the answer index so it remounts and replays
@@ -251,113 +260,115 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
         />
       )}
 
-      <header className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
-        <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
-            Equalize
-          </span>
-          <span className="tabular text-[10px] text-muted">
-            d{String(question?.difficulty ?? 1).padStart(2, "0")}
-          </span>
-        </div>
-        <div className="flex items-center gap-6">
-          <Stat label="Score" value={run.points.toLocaleString()} />
-          <Stat
-            label="Streak"
-            value={String(run.streak)}
-            tone={run.streak >= 5 ? "pos" : undefined}
-          />
-          {challenge && challenge.target > 0 && (
-            <Stat label="Target" value={challenge.target.toLocaleString()} tone="accent" />
-          )}
-        </div>
-      </header>
+      <Rail
+        code="EQZ"
+        remainingMs={remaining}
+        totalMs={ROUND_MS}
+        penalty={
+          run.feedback && !run.feedback.ok
+            ? { id: run.feedback.id, label: "−2s" }
+            : null
+        }
+        cells={[
+          { label: "Diff", value: `d${String(question?.difficulty ?? 1).padStart(2, "0")}` },
+          { label: "Q", value: String(run.index + 1) },
+          { label: "Score", value: run.points.toLocaleString() },
+          {
+            label: "Streak",
+            value: String(run.streak),
+            tone: run.streak >= 5 ? "pos" : undefined,
+          },
+          {
+            label: "Acc",
+            value: run.attempted ? `${accuracy}%` : "—",
+            tone: run.attempted && accuracy < 70 ? "neg" : undefined,
+          },
+          ...(challenge && challenge.target > 0
+            ? [
+                {
+                  label: "Target",
+                  value: challenge.target.toLocaleString(),
+                  tone: "accent" as const,
+                },
+              ]
+            : []),
+        ]}
+      />
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-10 px-4">
-        <div className="relative">
-          <span className="tabular text-7xl leading-none text-primary">
-            {formatClock(remaining)}
-          </span>
-          {run.feedback && !run.feedback.ok && (
-            <span
-              key={run.feedback.id}
-              className="rise-away tabular absolute -right-16 top-3 text-2xl text-data-neg"
-            >
-              −2s
-            </span>
-          )}
-        </div>
+      {/* Two panes sharing a divider, filling the frame. The expressions used
+          to float in the middle of a 1440px screen under a seventy-two pixel
+          clock, which is a quiz with the lights off. A comparison is two
+          columns; making them two columns is the whole fix. */}
+      <div className="relative grid min-h-0 flex-1 grid-cols-2 divide-x divide-hairline-strong">
+        <ExprPane
+          label="Left"
+          hint="◀ / A"
+          value={question!.left.display}
+          onClick={() => answer("left")}
+        />
+        <ExprPane
+          label="Right"
+          hint="D / ▶"
+          value={question!.right.display}
+          onClick={() => answer("right")}
+        />
 
-        <div className="flex w-full max-w-4xl items-stretch">
-          <ExprButton value={question!.left.display} onClick={() => answer("left")} />
-          <div className="flex w-14 shrink-0 items-center justify-center border-y border-hairline">
-            <span className="text-xs text-muted">vs</span>
-          </div>
-          <ExprButton value={question!.right.display} onClick={() => answer("right")} />
-        </div>
-
-        <div className="flex items-center gap-16">
-          <KeyHint hint="◀" label="Left" />
-          <KeyHint hint="▶" label="Right" />
-        </div>
+        {/* The comparator, sitting on the divider itself rather than in a
+            column of its own. A third grid column pushed the two panes apart
+            and broke the single rule down the middle, which is the thing that
+            makes them read as one instrument split in two. */}
+        <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border border-hairline-strong bg-surface px-2 py-1 text-[9px] uppercase tracking-[0.18em] text-secondary">
+          vs
+        </span>
       </div>
 
-      <footer className="shrink-0 border-t border-hairline px-4 py-1.5 text-center text-[10px] text-muted">
-        Pick the larger expression. A wrong answer costs two seconds.
-      </footer>
+      <Tape
+        entries={run.tape}
+        hint="Pick the larger expression. A wrong answer costs two seconds."
+      />
     </div>
   );
 }
 
-function formatClock(ms: number): string {
-  const seconds = ms / 1000;
-  // Under ten seconds the tenths do the work of making it feel urgent.
-  if (seconds <= 10) return (Math.ceil(ms / 100) / 10).toFixed(1);
-  const total = Math.ceil(seconds);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function Stat({
+/**
+ * One side of the comparison, as a full-height pane you can click anywhere in.
+ * The old version was a bordered button with a margin, which makes two cards
+ * on a page; a pane that reaches the edges of its column makes an instrument.
+ */
+function ExprPane({
   label,
   value,
-  tone,
+  hint,
+  onClick,
 }: {
   label: string;
   value: string;
-  tone?: "pos" | "accent";
+  hint: string;
+  onClick: () => void;
 }) {
-  const colour =
-    tone === "pos" ? "text-data-pos" : tone === "accent" ? "text-accent-ink" : "text-primary";
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
-      <span className={`tabular text-sm ${colour}`}>{value}</span>
-    </div>
-  );
-}
-
-function ExprButton({ value, onClick }: { value: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-1 basis-0 items-center justify-center border border-hairline px-5 py-12 transition-colors hover:border-hairline-strong hover:bg-white/[0.03] sm:py-16"
+      className="group flex min-w-0 flex-col text-left transition-colors hover:bg-accent/[0.07]"
     >
-      {/* Never wrap. An expression broken across two lines stops being one
-          glanceable quantity, which is the whole skill being trained. */}
-      <span className="tabular whitespace-nowrap text-[clamp(1.25rem,4vw,2.75rem)] text-primary">
-        {value}
+      {/* A header strip on each pane. Without it the two expressions float in
+          the middle of an empty column and the screen is a quiz again. */}
+      <span className="flex w-full shrink-0 items-baseline justify-between border-b border-hairline px-3 py-1.5">
+        <span className="text-[9px] uppercase tracking-[0.18em] text-secondary">
+          {label}
+        </span>
+        <span className="tabular text-[9px] text-muted">{hint}</span>
+      </span>
+
+      <span className="flex min-h-0 flex-1 items-center justify-center px-4">
+        <span className="tabular break-words text-center text-4xl leading-tight text-primary transition-colors group-hover:text-accent-ink sm:text-6xl">
+          {value}
+        </span>
+      </span>
+
+      <span className="w-full shrink-0 border-t border-hairline px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] text-muted opacity-0 transition-opacity group-hover:opacity-100">
+        Pick this one
       </span>
     </button>
-  );
-}
-
-function KeyHint({ hint, label }: { hint: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="flex h-10 w-10 items-center justify-center border border-hairline-strong text-secondary">
-        {hint}
-      </div>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">{label}</span>
-    </div>
   );
 }

@@ -13,6 +13,7 @@ import {
 
 const APPROX: ChoiceGame<ApproxQuestion> = {
   name: "Approx",
+  code: "APX",
   storageKey: "cmquant:approx:best",
   challengePath: "/g/approx",
   roundMs: ROUND_MS,

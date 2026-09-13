@@ -16,6 +16,7 @@ import {
 
 const OUTS: ChoiceGame<OutsQuestion> = {
   name: "Outs",
+  code: "OUT",
   storageKey: "cmquant:outs:best",
   challengePath: "/g/outs",
   roundMs: ROUND_MS,

@@ -13,6 +13,7 @@ import {
 
 const DOOMSDAY: ChoiceGame<DoomsdayQuestion> = {
   name: "Doomsday",
+  code: "DMD",
   storageKey: "cmquant:doomsday:best",
   challengePath: "/g/doomsday",
   roundMs: ROUND_MS,
