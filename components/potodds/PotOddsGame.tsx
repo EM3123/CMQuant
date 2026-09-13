@@ -236,9 +236,11 @@ export function PotOddsGame() {
           Pot Odds
         </h1>
         <p className="mt-5 max-w-md text-sm leading-relaxed text-secondary">
-          You are facing a bet. How often do you need to win for calling to break
-          even? The money you put in is part of the pot you are trying to win, and
-          that is the half everyone drops.
+          You are facing a bet and deciding whether to call. The question is how
+          often you need to win for that call to break even, and the answer is
+          the amount you are calling divided by the pot as it will stand after
+          your money is in it. Most people divide by the pot before their call,
+          which quietly makes the price look worse than it is.
         </p>
 
         {challenge && (

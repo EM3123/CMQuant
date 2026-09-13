@@ -52,7 +52,7 @@ const COMBINATORICS: ChoiceGame<CombinatoricsQuestion> = {
     eyebrow: "Poker Lab / Probability in Practice",
     title: "Combinatorics",
     blurb:
-      "Pocket aces is six combinations. Put one ace on the board and it is three, because two of the hands they could have been dealt no longer exist. Count what is left.",
+      "There are four aces, and any two of them make pocket aces, which gives six combinations before any other card is known. Put one ace on the board and only three aces remain, so the count falls from six to three, because half the pairings that were available no longer exist. The work is counting what survives once cards are removed.",
     startLabel: "Deal",
     hint: "Keys 1 – 4. A wrong answer costs two seconds.",
     learnHref: "/learn/combinatorics",

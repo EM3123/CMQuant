@@ -25,15 +25,41 @@ const templateShape = new Map<string, number>();
 let generated = 0;
 let slowest = { seed: "", index: 0, ms: 0 };
 
+/**
+ * Which template produced this side.
+ *
+ * EXHAUSTIVE ON PURPOSE, with no default. The first version ended in
+ * `return "add3"`, so when fractions, powers, roots and integrals were added
+ * every one of them was silently counted as an addition - the mix table read
+ * as seven templates summing to 100% while eleven were running. A classifier
+ * with a fall-through cannot report a template it has not been told about, and
+ * a distribution report that cannot see a template is worse than none.
+ *
+ * Order matters. An integral display contains a superscript and would match
+ * the power test; a power and a square are told apart by the width of the
+ * base, since squares are 11-34 and power bases are single digits.
+ */
 function shapeOf(display: string): string {
+  if (display.includes("∫")) return "integral";
+  if (display.includes("√")) return "root";
   if (display.includes("% of")) return "pct";
-  if (display.includes("²")) return "sq";
+  if (/^\d+\/\d+ of \d+$/.test(display)) return "frac";
+  if (/^\d{2}²$/.test(display)) return "sq";
+  if (/^\d[⁰¹²³⁴⁵⁶⁷⁸⁹]+$/.test(display)) return "pow";
   if (display.includes("÷")) return "div";
   if (display.includes("×") && display.includes("+")) return "mulAdd";
   if (display.includes("×")) return "mul";
   if (display.includes("−")) return "sub";
-  return "add3";
+  if (/^\d+ \+ \d+ \+ \d+$/.test(display)) return "add3";
+  return "UNCLASSIFIED";
 }
+
+/** Every template that exists. A template that never appears is dead code
+ *  wearing a live template's clothes, so the run fails if one is missing. */
+const EXPECTED_SHAPES = [
+  "mul", "add3", "sub", "mulAdd", "pct", "div", "sq",
+  "frac", "pow", "root", "integral",
+];
 
 for (let run = 0; run < RUNS; run++) {
   const seed = `verify-${run}`;
@@ -158,6 +184,9 @@ for (const d of [...gapsByDifficulty.keys()].sort((a, b) => a - b)) {
   );
 }
 
+const unclassified = templateShape.get("UNCLASSIFIED") ?? 0;
+const missing = EXPECTED_SHAPES.filter((shape) => !templateShape.has(shape));
+
 console.log("\ntemplate mix (both sides pooled)");
 const shapeTotal = [...templateShape.values()].reduce((a, b) => a + b, 0);
 for (const [shape, n] of [...templateShape.entries()].sort((a, b) => b[1] - a[1])) {
@@ -174,7 +203,12 @@ for (const i of [0, 6, 15, 30, 44]) {
   );
 }
 
-if (failures.length || determinismBreaks) {
+if (unclassified) console.log(`
+UNCLASSIFIED SIDES: ${unclassified} - shapeOf does not know a template that is running`);
+if (missing.length) console.log(`
+TEMPLATES THAT NEVER APPEARED: ${missing.join(", ")}`);
+
+if (failures.length || determinismBreaks || unclassified || missing.length) {
   console.log("\nfirst failures");
   for (const f of failures.slice(0, 12)) {
     console.log(

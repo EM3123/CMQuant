@@ -36,6 +36,74 @@ const MINUS = "−";
 
 const PERCENTS = [5, 10, 15, 20, 25, 30, 40, 60, 75] as const;
 
+
+/* --------------------------------------------------------------------------
+   Notation
+   Superscripts and subscripts as characters rather than markup, because the
+   whole product is one monospace face and a <sup> in the middle of a tabular
+   line breaks the baseline everything else sits on.
+   -------------------------------------------------------------------------- */
+const SUPER = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+const SUB = ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"];
+
+function sup(n: number): string {
+  return String(n)
+    .split("")
+    .map((c) => SUPER[Number(c)])
+    .join("");
+}
+
+function sub(n: number): string {
+  return String(n)
+    .split("")
+    .map((c) => SUB[Number(c)])
+    .join("");
+}
+
+/** Denominators a person can actually divide by in their head. */
+const DENOMS = [3, 4, 5, 6, 8, 10, 12] as const;
+
+/**
+ * Every exact power worth showing, precomputed once.
+ *
+ * Built rather than sampled so the value is an exact integer and the nearest
+ * one to a target can be found by scanning. Squares of small numbers are
+ * excluded because `sq` already owns those and 4² is not a question.
+ */
+const POWERS: { display: string; value: number; exp: number }[] = (() => {
+  const out: { display: string; value: number; exp: number }[] = [];
+  for (let base = 2; base <= 9; base++) {
+    for (let exp = 3; exp <= 12; exp++) {
+      const value = Math.pow(base, exp);
+      if (value < 25 || value > 6000) continue;
+      out.push({ display: `${base}${sup(exp)}`, value, exp });
+    }
+  }
+  return out.sort((a, b) => a.value - b.value);
+})();
+
+
+/**
+ * Fractions are shown in lowest terms.
+ *
+ * Picking a numerator freely under a denominator produced "2/4 of 56", which
+ * is a correct question and a sloppy one - nobody writes 2/4, and reading it
+ * costs a beat that has nothing to do with the arithmetic. Reducing can leave a
+ * denominator of two, which is not a question either, so those are rejected.
+ */
+function reducedFraction(rng: Rng, denoms: readonly number[]): { a: number; b: number } | null {
+  const b0 = pick(rng, denoms);
+  const a0 = randInt(rng, 1, b0 - 1);
+  const g = gcd(a0, b0);
+  const a = a0 / g;
+  const b = b0 / g;
+  return b < 3 ? null : { a, b };
+}
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
 const TEMPLATES: Template[] = [
   {
     // a x b
@@ -154,7 +222,102 @@ const TEMPLATES: Template[] = [
       return { display: `${n}²`, value: n * n };
     },
   },
+  {
+    // a/b of n, where b divides n so the value is a whole number.
+    //
+    // The same shape as `pct` and a completely different piece of arithmetic:
+    // a percentage is a division by a hundred you have memorised, a fraction is
+    // one you have to do.
+    id: "frac",
+    minDifficulty: 6,
+    sample(rng, d) {
+      const f = reducedFraction(rng, DENOMS);
+      if (!f) return { display: "3/4 of 80", value: 60 };
+      const k = randInt(rng, 4, Math.round(ramp(d, 30, 110)));
+      return { display: `${f.a}/${f.b} of ${f.b * k}`, value: f.a * k };
+    },
+    sampleNear(rng, d, target) {
+      const f = reducedFraction(rng, DENOMS);
+      if (!f) return null;
+      const k = Math.round(target / f.a);
+      if (k < 4 || k > Math.round(ramp(d, 30, 110))) return null;
+      return { display: `${f.a}/${f.b} of ${f.b * k}`, value: f.a * k };
+    },
+  },
+  {
+    // base to a power, from the precomputed exact table.
+    id: "pow",
+    minDifficulty: 7,
+    sample(rng, d) {
+      const ceiling = ramp(d, 400, 6000);
+      const pool = POWERS.filter((p) => p.value <= ceiling);
+      const chosen = pick(rng, pool.length ? pool : POWERS);
+      return { display: chosen.display, value: chosen.value };
+    },
+    sampleNear(rng, d, target) {
+      const ceiling = ramp(d, 400, 6000);
+      const pool = POWERS.filter((p) => p.value <= ceiling);
+      if (!pool.length) return null;
+      // Nearest exact power to the target. There is no interpolating here -
+      // a power either exists at that value or it does not.
+      let best = pool[0];
+      for (const p of pool) {
+        if (Math.abs(p.value - target) < Math.abs(best.value - target)) best = p;
+      }
+      return { display: best.display, value: best.value };
+    },
+  },
+  {
+    // square root of a perfect square. Exact by construction.
+    id: "root",
+    minDifficulty: 7,
+    sample(rng, d) {
+      const n = randInt(rng, 21, Math.round(ramp(d, 40, 90)));
+      return { display: `√${n * n}`, value: n };
+    },
+    sampleNear(rng, d, target) {
+      const n = Math.round(target);
+      if (n < 21 || n > Math.round(ramp(d, 40, 90))) return null;
+      return { display: `√${n * n}`, value: n };
+    },
+  },
+  {
+    // A definite integral of a single power term.
+    //
+    //   ∫₀ᵃ k·xⁿ dx  =  k·aⁿ⁺¹ / (n+1)
+    //
+    // The coefficient is built as k = (n+1)·m, which cancels the denominator
+    // exactly and leaves m·aⁿ⁺¹ - an integer, always. Nothing here is
+    // rounded, so the comparison is as exact as the arithmetic ones.
+    id: "integral",
+    minDifficulty: 9,
+    sample(rng, d) {
+      const n = randInt(rng, 1, 3);
+      const a = randInt(rng, 2, n === 1 ? 9 : n === 2 ? 6 : 4);
+      const m = randInt(rng, 1, Math.round(ramp(d, 3, 9)));
+      return integralExpr(n, a, m);
+    },
+    sampleNear(rng, d, target) {
+      const n = randInt(rng, 1, 3);
+      const a = randInt(rng, 2, n === 1 ? 9 : n === 2 ? 6 : 4);
+      const scale = Math.pow(a, n + 1);
+      const m = Math.round(target / scale);
+      if (m < 1 || m > Math.round(ramp(d, 3, 9))) return null;
+      return integralExpr(n, a, m);
+    },
+  },
 ];
+
+/** One integral term, laid out so the value is an exact integer. */
+function integralExpr(n: number, a: number, m: number): Expr {
+  const k = (n + 1) * m;
+  const term = n === 1 ? `${k}x` : `${k}x${sup(n)}`;
+  return {
+    display: `∫${sub(0)}${sup(a)} ${term} dx`,
+    value: m * Math.pow(a, n + 1),
+  };
+}
+
 
 /** Closeness band. Wide and forgiving at difficulty 1, brutal at 10. */
 export function gapBand(difficulty: number): { min: number; max: number } {

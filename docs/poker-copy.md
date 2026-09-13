@@ -45,10 +45,12 @@ Two lines are legal guardrails rather than writing, and they are marked
 **id: pot.title**
 > Pot Odds
 
-**id: pot.blurb**
-> You are facing a bet. How often do you need to win for calling to break even?
-> The money you put in is part of the pot you are trying to win, and that is the
-> half everyone drops.
+**id: pot.blurb** — rewritten, live
+> You are facing a bet and deciding whether to call. The question is how often
+> you need to win for that call to break even, and the answer is the amount you
+> are calling divided by the pot as it will stand after your money is in it.
+> Most people divide by the pot before their call, which quietly makes the price
+> look worse than it is.
 
 **id: pot.start** — the button
 > Deal
@@ -108,10 +110,12 @@ screen; the fix is the sentence under it.
 **id: outs.title**
 > Outs
 
-**id: outs.blurb**
-> Six cards are face up and one is still to come. Count the cards that get you
-> to the hand named, and count them exactly — every answer here is checked
-> against all 46, not estimated.
+**id: outs.blurb** — rewritten, live
+> Six cards are visible, your two and the four on the board, which leaves
+> forty-six you have not seen and one still to come. Count how many of those
+> forty-six complete the hand named in the question. Every answer is an exact
+> count rather than an approximation, so the 2x and 4x shortcuts will not get
+> you there.
 
 **id: outs.start**
 > Deal
@@ -153,10 +157,12 @@ screen; the fix is the sentence under it.
 **id: combos.title**
 > Combinatorics
 
-**id: combos.blurb**
-> Pocket aces is six combinations. Put one ace on the board and it is three,
-> because two of the hands they could have been dealt no longer exist. Count
-> what is left.
+**id: combos.blurb** — rewritten, live
+> There are four aces, and any two of them make pocket aces, which gives six
+> combinations before any other card is known. Put one ace on the board and only
+> three aces remain, so the count falls from six to three, because half the
+> pairings that were available no longer exist. The work is counting what
+> survives once cards are removed.
 
 **id: combos.start**
 > Deal

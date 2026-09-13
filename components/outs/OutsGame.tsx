@@ -51,7 +51,7 @@ const OUTS: ChoiceGame<OutsQuestion> = {
     eyebrow: "Poker Lab / Probability in Practice",
     title: "Outs",
     blurb:
-      "Six cards are face up and one is still to come. Count the cards that get you to the hand named, and count them exactly — every answer here is checked against all 46, not estimated.",
+      "Six cards are visible, your two and the four on the board, which leaves forty-six you have not seen and one still to come. Count how many of those forty-six complete the hand named in the question. Every answer is an exact count rather than an approximation, so the 2x and 4x shortcuts will not get you there.",
     startLabel: "Deal",
     hint: "Keys 1 – 4. A wrong answer costs two seconds.",
     learnHref: "/learn/outs",
