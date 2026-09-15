@@ -298,7 +298,7 @@ export function grade(spot: PokerMinuteSpot, action: Action): Grade {
  * never the player, so everybody on a seed gets the same run.
  */
 export function difficultyForIndex(index: number): number {
-  return clampDifficulty(1 + Math.floor(index / 1.6));
+  return clampDifficulty(1 + Math.floor(index / 1.2));
 }
 
 export function spotAt(runSeed: string, index: number): PokerMinuteSpot {
@@ -317,11 +317,46 @@ export function timeMultiplier(msElapsed: number, budgetSeconds: number): number
   return 1 + 0.15 * spare;
 }
 
+/**
+ * A leak costs points, and it costs them in proportion to what it gave up.
+ *
+ * There are two buttons and the best action is call roughly half the time, so
+ * a player alternating blindly is right about half the time. If being wrong
+ * merely paid nothing, mashing would earn half of what thinking earns - the
+ * lesson the shared economy already learned on Equalize, where holding one
+ * arrow key posted a personal best.
+ *
+ * A flat penalty was measured and was not enough: always folding still
+ * finished a run at +386, because the streak multiplier lifts the wins while
+ * the losses stay the same size. Scaling the penalty by EV given up fixes that
+ * and is the honest version anyway - this is a game about EV, so the number of
+ * points lost should track the number of blinds lost. The median wrong action
+ * gives up about seventeen per cent of the contested pot, which lands near
+ * three hundred points.
+ */
+export const LEAK_BASE = -100;
+export const LEAK_SLOPE = 12;
+
+function leakPoints(evLossBb: number, pot: number, bet: number): number {
+  return Math.round(LEAK_BASE * (1 + LEAK_SLOPE * evLossShare(evLossBb, pot, bet)));
+}
+
+/** What a decision that was not a leak pays, as a multiple of the base. */
 const GRADE_MULTIPLIER: Record<Grade, number> = {
   best: 1,
   close: 0.45,
   error: 0,
 };
+
+/**
+ * Below this, an answer was not a decision.
+ *
+ * Reading two hole cards, five board cards, a pot and a bet cannot be done in
+ * seven tenths of a second. Faster than this earns no speed bonus at all. The
+ * button still works, because blocking input mid-run feels broken, but
+ * hammering it is worth strictly less than thinking.
+ */
+export const MIN_DECISION_MS = 700;
 
 export function scoreSpot(
   spot: PokerMinuteSpot,
@@ -332,11 +367,45 @@ export function scoreSpot(
   const base = 100;
   const difficultyBonus = 1 + (spot.difficulty - 1) * 0.08;
   const streakBonus = Math.min(2, 1 + streak * 0.06);
-  return Math.round(
-    base *
-      GRADE_MULTIPLIER[grade(spot, action)] *
-      difficultyBonus *
-      streakBonus *
-      timeMultiplier(msElapsed, spot.budgetSeconds)
-  );
+  const g = grade(spot, action);
+
+  // A leak is not made cheaper by a long streak, an easy spot, or speed.
+  if (g === "error") return leakPoints(evLoss(spot, action), spot.pot, spot.bet);
+
+  const speed =
+    msElapsed < MIN_DECISION_MS ? 1 : timeMultiplier(msElapsed, spot.budgetSeconds);
+
+  return Math.round(base * GRADE_MULTIPLIER[g] * difficultyBonus * streakBonus * speed);
 }
+
+/**
+ * The streak, which counts best lines rather than survivals.
+ *
+ * Green extends it. Yellow holds it - a defensible call should not cost the
+ * run, but it should not be worth as much as finding the best line. Red breaks
+ * it, and the run carries on.
+ */
+export function nextStreak(streak: number, g: Grade): number {
+  if (g === "best") return streak + 1;
+  if (g === "close") return streak;
+  return 0;
+}
+
+/**
+ * Credit toward the end-of-run multiplier. A defensible decision counts half
+ * of a best line, which is the same shape as the accuracy multiplier every
+ * other game uses - it just is not binary here.
+ */
+export function decisionCredit(best: number, close: number): number {
+  return best + close * 0.5;
+}
+
+/** The three-band tally a run produces, in the order it is shown. */
+export type GradeCounts = { best: number; close: number; error: number };
+
+/** The share grid. Spoiler-free: it says how you did, never what the spot was. */
+export const GRADE_GLYPH: Record<Grade, string> = {
+  best: "\u{1F7E9}",
+  close: "\u{1F7E8}",
+  error: "\u{1F7E5}",
+};

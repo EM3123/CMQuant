@@ -12,6 +12,9 @@
 
 import {
   spotAt,
+  scoreSpot,
+  nextStreak,
+  decisionCredit,
   evOfCall,
   breakEvenEquity,
   evLoss,
@@ -21,6 +24,7 @@ import {
   evLossShare,
   type PokerMinuteSpot,
 } from "../lib/games/pokerminute";
+import { finalScore } from "../lib/scoring";
 import { encode } from "../lib/poker/hand";
 import { bestRank } from "../lib/poker/rank";
 
@@ -33,6 +37,10 @@ const equities: number[] = [];
 const evs: number[] = [];
 let generated = 0;
 let slowest = 0;
+
+/** Every spot, kept in run order, so the exploit simulation below can replay
+ *  the same seven thousand spots instead of generating its own. */
+const runs: PokerMinuteSpot[][] = [];
 
 for (let run = 0; run < RUNS; run++) {
   const seed = `verify-${run}`;
@@ -148,7 +156,77 @@ for (let run = 0; run < RUNS; run++) {
     bestAction[s.best]++;
     equities.push(s.equity);
     evs.push(Math.abs(s.evCall));
+    (runs[run] ??= []).push(s);
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Can guessing beat thinking?                                                */
+/* -------------------------------------------------------------------------- */
+
+// Two buttons and a sixty-second clock is the exact shape that produced the
+// Equalize exploit: hold one key, out-earn a careful player. So the strategies
+// somebody would actually abuse are simulated here, scored through the real
+// run economy, and every one of them has to finish a run in the red.
+//
+// The mashers are given the same number of spots as the honest player, which
+// is generous to them - answering instantly means getting through two or three
+// times as many, and every extra spot is another negative expectation. If they
+// lose at eighteen spots they lose worse at fifty.
+
+type Strategy = {
+  name: string;
+  /** Chosen from the spot, so a strategy can be "always fold" or "the truth". */
+  act: (s: PokerMinuteSpot, i: number) => "fold" | "call";
+  /** How long the strategy takes to decide. Mashing earns no speed bonus. */
+  ms: number;
+};
+
+const strategies: Strategy[] = [
+  { name: "always fold", act: () => "fold", ms: 120 },
+  { name: "always call", act: () => "call", ms: 120 },
+  { name: "alternating", act: (_s, i) => (i % 2 === 0 ? "fold" : "call"), ms: 120 },
+  { name: "perfect play", act: (s) => s.best, ms: 4200 },
+];
+
+const scoreboard: {
+  name: string;
+  raw: number;
+  final: number;
+  bestShare: number;
+}[] = [];
+
+for (const strategy of strategies) {
+  let rawTotal = 0;
+  let finalTotal = 0;
+  let bestCount = 0;
+  let decisions = 0;
+
+  for (const spots of runs) {
+    let raw = 0;
+    let streak = 0;
+    const counts = { best: 0, close: 0, error: 0 };
+
+    spots.forEach((s, i) => {
+      const g = grade(s, strategy.act(s, i));
+      counts[g]++;
+      raw += scoreSpot(s, strategy.act(s, i), strategy.ms, streak);
+      streak = nextStreak(streak, g);
+    });
+
+    const attempted = counts.best + counts.close + counts.error;
+    rawTotal += raw;
+    finalTotal += finalScore(raw, decisionCredit(counts.best, counts.close), attempted);
+    bestCount += counts.best;
+    decisions += attempted;
+  }
+
+  scoreboard.push({
+    name: strategy.name,
+    raw: rawTotal / runs.length,
+    final: finalTotal / runs.length,
+    bestShare: bestCount / decisions,
+  });
 }
 
 let determinismBreaks = 0;
@@ -180,6 +258,16 @@ console.log(`best is call     ${callShare.toFixed(1)}%  (want 40-60)`);
 console.log(`median equity    ${(median(equities) * 100).toFixed(1)}%`);
 console.log(`median |EV|      ${median(evs).toFixed(2)} bb`);
 
+console.log("\nan average run, played each of four ways");
+console.log("  strategy         earned    scored   best line");
+for (const s of scoreboard) {
+  console.log(
+    `  ${s.name.padEnd(14)} ${String(Math.round(s.raw)).padStart(7)}` +
+      `   ${String(Math.round(s.final)).padStart(7)}` +
+      `   ${(s.bestShare * 100).toFixed(0)}%`
+  );
+}
+
 console.log("\nsample run (seed sample-1)");
 for (const i of [0, 4, 9, 14, 17]) {
   const s = spotAt("sample-1", i);
@@ -191,7 +279,15 @@ for (const i of [0, 4, 9, 14, 17]) {
 }
 
 const lopsided = callShare < 40 || callShare > 60;
-if (failures.length || determinismBreaks || lopsided) {
+const perfect = scoreboard.find((s) => s.name === "perfect play")!;
+// A guessing strategy has to end a run in the red before the multiplier. The
+// score shown to the player is clamped at zero, so testing the clamped number
+// would pass no matter how generous the economy was.
+const guessingPays = scoreboard.some((s) => s.name !== "perfect play" && s.raw >= 0);
+
+if (failures.length || determinismBreaks || lopsided || guessingPays || perfect.raw <= 0) {
+  if (guessingPays) console.log("GUESSING PAYS - a masher does not finish in the red");
+  if (perfect.raw <= 0) console.log("PERFECT PLAY SCORES NOTHING - the economy is upside down");
   if (lopsided) console.log("\nBEST ACTION IS LOPSIDED - one answer beats guessing");
   console.log("\nfirst failures");
   for (const f of failures.slice(0, 10)) console.log(`  ${f.where}: ${f.why}`);
