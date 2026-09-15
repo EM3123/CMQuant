@@ -344,7 +344,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
       {run.feedback && (
         <div
           key={run.feedback.id}
-          className={`flash-layer ${run.feedback.ok ? "bg-data-pos/20" : "bg-data-neg/25"}`}
+          className={`flash-layer ${run.feedback.ok ? "flash-correct" : "flash-wrong"}`}
         />
       )}
 

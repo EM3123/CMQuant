@@ -361,10 +361,17 @@ body {
    7. Round feedback
    Under 120ms, and never a page transition. The round is the unit; anything
    that interrupts the rhythm between questions breaks the whole product.
+
+   The colour is the message: green for a correct answer, red for a wrong one,
+   never a single neutral flash that only says "next question". Both draw from
+   the functional data tokens (data-pos / data-neg), which are identical in
+   every wing on purpose, so right always reads green and wrong always reads
+   red no matter which room you are in. Colour lives here, in CSS, rather than
+   in a component class, so it stays inside the token system (see AGENTS.md).
    -------------------------------------------------------------------------- */
 @keyframes wing-flash {
   from {
-    opacity: 0.55;
+    opacity: 0.7;
   }
   to {
     opacity: 0;
@@ -377,6 +384,17 @@ body {
   z-index: 20;
   pointer-events: none;
   animation: wing-flash var(--dur-feedback) var(--ease-wing) forwards;
+}
+
+/* Right. A clear terminal green wash, keyed to alpha-positive. */
+@utility flash-correct {
+  background: color-mix(in oklab, var(--color-data-pos) 32%, transparent);
+}
+
+/* Wrong. A clear crimson wash, keyed to alpha-negative, and a touch stronger
+   than the green because a miss is the thing you most need to register. */
+@utility flash-wrong {
+  background: color-mix(in oklab, var(--color-data-neg) 38%, transparent);
 }
 
 @keyframes wing-rise {
