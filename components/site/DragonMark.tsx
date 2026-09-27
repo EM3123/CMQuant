@@ -12,6 +12,13 @@
  * and the snout are the whole of the reading - take either away and it is a
  * bird.
  */
+/**
+ * The silhouette, exported so the pet can grow into the real mark rather than
+ * into a lookalike. One dragon, drawn once.
+ */
+export const DRAGON_PATH =
+  "M14 51 L9 42 L14 34 L0 26 L15 29 L4 12 L19 24 L27 18 L39 18 L51 25 L58 31 L52 35 L36 35 L50 42 L53 45 L45 53 L41 46 L26 48 Z M27 23 L34 25 L29 27 Z";
+
 export function DragonMark({
   className = "",
   title,
@@ -35,8 +42,7 @@ export function DragonMark({
       {title && <title>{title}</title>}
       <path
         fillRule="evenodd"
-        d="M14 51 L9 42 L14 34 L0 26 L15 29 L4 12 L19 24 L27 18 L39 18 L51 25 L58 31 L52 35 L36 35 L50 42 L53 45 L45 53 L41 46 L26 48 Z
-           M27 23 L34 25 L29 27 Z"
+        d={DRAGON_PATH}
       />
     </svg>
   );

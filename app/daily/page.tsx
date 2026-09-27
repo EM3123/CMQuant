@@ -15,6 +15,7 @@ import {
 } from "@/lib/daily";
 import { Wordmark } from "@/components/site/Wordmark";
 import { AccountLink } from "@/components/account/AccountLink";
+import { DragonPet, PetLadder } from "@/components/site/DragonPet";
 
 /**
  * One puzzle a day, one attempt, the same for everybody.
@@ -128,9 +129,27 @@ export default function DailyPage() {
           </div>
         )}
 
+        {/* The pet lives here rather than on the front page, because this is
+            the page about coming back and it is the thing the pet measures.
+            The landing page already has a dragon on it, and two is one too
+            many. */}
+        <div className="mt-6 border border-hairline-strong">
+          <div className="flex items-baseline justify-between border-b border-hairline px-4 py-2">
+            <Label>Your dragon</Label>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
+              Grows on days played
+            </span>
+          </div>
+          <div className="grid gap-8 px-5 py-6 sm:grid-cols-[auto_1fr] sm:items-center">
+            <DragonPet />
+            <PetLadder />
+          </div>
+        </div>
+
         <p className="mt-4 text-center text-[10px] leading-relaxed text-muted">
           One puzzle a day, one attempt, the same questions for everyone. The
-          day turns over at midnight UTC.
+          day turns over at midnight UTC. The dragon counts days you finished a
+          run on any game, not runs and not score.
         </p>
       </div>
 

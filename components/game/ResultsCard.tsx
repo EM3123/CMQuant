@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
+import { recordPlay } from "@/lib/pet";
 import { Wordmark } from "@/components/site/Wordmark";
 import { RunInsights } from "@/components/game/RunInsights";
 import type { Answer } from "@/lib/insights";
@@ -88,6 +89,13 @@ export function ResultsCard({
   useEffect(() => {
     if (assisted) return;
     const dayKey = todayKey();
+
+    // The pet counts distinct days a run was FINISHED, on any game, daily or
+    // not. Idempotent within a day, so six runs on a Tuesday is one Tuesday -
+    // which is the entire mechanic. An assisted run does not feed it either;
+    // a cheat that grows the pet is a pet that means nothing.
+    recordPlay(dayKey);
+
     if (seed !== dailySeed(dayKey)) return;
     writeDailyResult({
       dayKey,

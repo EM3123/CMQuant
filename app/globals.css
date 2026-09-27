@@ -412,6 +412,27 @@ body {
   }
 }
 
+/* The pet's dragon, with something running through it.
+   
+   A scanline sweeping down the inside of the silhouette. This was a canvas
+   with a requestAnimationFrame loop drawing matrix rain, which is three
+   problems: it never stops, so it burns battery on a page nobody is looking
+   at; rAF stalls in a throttled tab, so it can freeze mid-frame; and the
+   reduced-motion clamp in this file cannot reach a canvas at all. A keyframe
+   has none of those properties. */
+@keyframes pet-scan {
+  from {
+    transform: translateY(-20px);
+  }
+  to {
+    transform: translateY(64px);
+  }
+}
+
+@utility pet-scan {
+  animation: pet-scan 2.8s linear infinite;
+}
+
 @utility rise-away {
   animation: wing-rise 620ms var(--ease-wing) forwards;
 }

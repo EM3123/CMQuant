@@ -10,7 +10,7 @@
     "verify:equalize": "tsx scripts/verify-equalize.ts",
     "verify:potodds": "tsx scripts/verify-potodds.ts",
     "verify:flash": "tsx scripts/verify-flash.ts",
-    "verify": "npm run verify:hand && npm run verify:rank && npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds && npm run verify:outs && npm run verify:combinatorics && npm run verify:pokerminute && npm run verify:flopstrength && npm run verify:equity && npm run verify:insights && npm run verify:endless && npm run verify:daily",
+    "verify": "npm run verify:hand && npm run verify:rank && npm run verify:equalize && npm run verify:flash && npm run verify:approx && npm run verify:doomsday && npm run verify:memorytiles && npm run verify:potodds && npm run verify:outs && npm run verify:combinatorics && npm run verify:pokerminute && npm run verify:flopstrength && npm run verify:equity && npm run verify:insights && npm run verify:endless && npm run verify:daily && npm run verify:pet",
     "verify:approx": "tsx scripts/verify-approx.ts",
     "verify:doomsday": "tsx scripts/verify-doomsday.ts",
     "verify:memorytiles": "tsx scripts/verify-memorytiles.ts",
@@ -25,7 +25,8 @@
     "verify:equity": "tsx scripts/verify-equity.ts",
     "verify:insights": "tsx scripts/verify-insights.ts",
     "verify:endless": "tsx scripts/verify-endless.ts",
-    "verify:daily": "tsx scripts/verify-daily.ts"
+    "verify:daily": "tsx scripts/verify-daily.ts",
+    "verify:pet": "tsx scripts/verify-pet.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
