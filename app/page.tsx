@@ -8,6 +8,7 @@ import { ScrollProgress } from "@/components/site/ScrollProgress";
 import { HeroDragon } from "@/components/site/HeroDragon";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
+import { AccountLink } from "@/components/account/AccountLink";
 
 /**
  * Three screens: who built it, a game you can play without deciding to, and
@@ -95,6 +96,7 @@ export default function Home() {
           <Link href="/poker" className="transition-colors hover:text-primary">
             Poker Lab
           </Link>
+          <AccountLink />
         </div>
       </nav>
 

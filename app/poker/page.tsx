@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wing } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Wordmark } from "@/components/site/Wordmark";
+import { AccountLink } from "@/components/account/AccountLink";
 import { BestCell } from "@/components/game/BestCell";
 import { FIVE_CARD_HANDS } from "@/lib/poker/frequency";
 
@@ -67,6 +68,7 @@ export default function PokerPage() {
             <Link href="/comp" className="transition-colors hover:text-primary">
               Comp
             </Link>
+            <AccountLink />
           </div>
         </nav>
 

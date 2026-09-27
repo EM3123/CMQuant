@@ -161,11 +161,11 @@ player in Pittsburgh and a player in Tokyo on different puzzles while sharing
 one leaderboard.
 
 Results are recorded in `ResultsCard`, because every game ends there and it is
-the only place that has to know a run finished. One attempt is enforced in
-`localStorage` and nowhere else, so anyone can clear their own storage and
-replay. That is fine while the board is unranked and labelled as such; it stops
-being fine the day scores start meaning something, which is when generation and
-validation have to move to a server.
+the only place that has to know a run finished. Signed out, one attempt is
+enforced in `localStorage` and nowhere else, so anyone can clear their own
+storage and replay. Signed in, the database allows one daily run per player per
+day. Scores are still reported by the browser; before they rank anything,
+validation has to move to the server (see Accounts below).
 
 ## Poker
 
@@ -195,6 +195,17 @@ you actually made and how to fix each one, rather than only that you missed.
 
 Adding this to a game means two things: label the distractors in the generator,
 and give the `ChoiceGame` a `diagnose` function. `ChoiceRun` tallies the rest.
+
+## Accounts
+
+Optional, and off until the Supabase keys are set. Players sign in with an
+emailed six-digit code, pick a username, and every finished run is saved from
+`ResultsCard` through `app/api/runs`. Setup, the schema and the free-tier limits
+are in [docs/accounts.md](docs/accounts.md).
+
+Saved runs are stored with `verified = false`: the browser still reports its own
+score. The next step is for the server to replay the answers from the seed and
+score them itself, and only then should a leaderboard rank anything.
 
 ## Ads
 

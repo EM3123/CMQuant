@@ -3,6 +3,7 @@ import { Wing, Label } from "@/components/Wing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { BestCell } from "@/components/game/BestCell";
 import { Wordmark } from "@/components/site/Wordmark";
+import { AccountLink } from "@/components/account/AccountLink";
 
 const DRILLS = [
   {
@@ -89,6 +90,7 @@ export default function CompPage() {
           <Link href="/poker" className="transition-colors hover:text-primary">
             Poker Lab
           </Link>
+          <AccountLink />
         </div>
       </header>
 

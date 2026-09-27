@@ -37,9 +37,10 @@ command is the staging environment.
   returns `null`.
 - **No slot is mounted on any page.** `AdSlot` exists and is imported nowhere.
   Two slot ids are defined with fixed sizes; neither is placed yet.
-- **The site currently collects nothing.** No accounts, no cookies, no
-  analytics, no third-party scripts. `/legal/privacy` states all three in
-  plain language.
+- **Without an account, the site collects nothing.** No cookies, no
+  analytics, no third-party scripts. Accounts are optional and store only an
+  email, a username and saved runs, in Supabase (see `docs/accounts.md`).
+  `/legal/privacy` states all of it in plain language.
 
 To see the slots while you work, make a `.env.local`:
 
