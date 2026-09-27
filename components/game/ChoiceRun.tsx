@@ -4,6 +4,14 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { useAssist } from "@/lib/assist";
+import {
+  LIVES,
+  windowMs,
+  endlessScore,
+  endlessKey,
+  endlessRecord,
+  unpackRecord,
+} from "@/lib/endless";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
 import {
@@ -73,8 +81,11 @@ export type MistakeTally = Record<string, { label: string; fix: string; count: n
 
 type Phase = "idle" | "running" | "done";
 
+export type RunMode = "timed" | "endless";
+
 type RunState = {
   phase: Phase;
+  mode: RunMode;
   seed: string;
   index: number;
   correct: number;
@@ -90,6 +101,11 @@ type RunState = {
   tape: { id: number; ok: boolean; ms: number }[];
   /** Sticky. One assisted answer marks the whole run, and it never unsets. */
   assisted: boolean;
+  /** Endless only. Lives left, and the deadline for the question on screen. */
+  lives: number;
+  questionEndsAt: number;
+  /** Endless only. Questions answered correctly - the headline number. */
+  cleared: number;
 };
 
 const EMPTY: RunState = {
@@ -107,11 +123,17 @@ const EMPTY: RunState = {
   feedback: null,
   tape: [],
   assisted: false,
+  mode: "timed",
+  lives: LIVES,
+  questionEndsAt: 0,
+  cleared: 0,
 };
 
 type Action =
-  | { type: "start"; seed: string; now: number }
+  | { type: "start"; seed: string; now: number; mode: RunMode }
   | { type: "answer"; chosen: number; now: number; assist: boolean }
+  /** Endless only. The window on the current question closed. */
+  | { type: "timeout"; now: number }
   | { type: "finish" };
 
 function makeReducer<Q>(game: ChoiceGame<Q>) {
@@ -121,8 +143,14 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
         return {
           ...EMPTY,
           phase: "running",
+          mode: action.mode,
           seed: action.seed,
-          endsAt: action.now + game.roundMs,
+          // Timed runs get a round clock. Endless runs get a per-question one
+          // and a round clock that never expires, so nothing else in here has
+          // to branch on the mode to read a deadline.
+          endsAt:
+            action.mode === "timed" ? action.now + game.roundMs : Number.MAX_SAFE_INTEGER,
+          questionEndsAt: action.now + windowMs(0),
           shownAt: action.now,
         };
 
@@ -155,27 +183,65 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
           }
         }
 
+        const endless = state.mode === "endless";
+        const lives = endless && !ok ? state.lives - 1 : state.lives;
+
         const next: RunState = {
           ...state,
           index: state.index + 1,
           attempted: state.attempted + 1,
           correct: state.correct + (ok ? 1 : 0),
+          cleared: state.cleared + (ok ? 1 : 0),
+          lives,
           mistakes,
           streak,
           bestStreak: Math.max(state.bestStreak, streak),
           assisted: state.assisted || action.assist,
+          // Endless scores by its own rules. Reusing the timed economy would
+          // produce a number that sorts next to a timed score and means
+          // something else - see lib/endless.ts.
           points:
             state.points +
-            (ok
-              ? game.score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
-              : WRONG_POINTS),
+            (endless
+              ? ok
+                ? endlessScore(state.index, game.difficultyOf(question), elapsed)
+                : 0
+              : ok
+                ? game.score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
+                : WRONG_POINTS),
           endsAt,
+          questionEndsAt: action.now + windowMs(state.index + 1),
           shownAt: action.now,
           feedback: { id: state.index, ok },
           tape: [...state.tape, { id: state.index, ok, ms: elapsed }],
         };
 
+        if (endless) return lives <= 0 ? { ...next, phase: "done" } : next;
         return endsAt <= action.now ? { ...next, phase: "done" } : next;
+      }
+
+      case "timeout": {
+        if (state.phase !== "running" || state.mode !== "endless") return state;
+
+        // A window that closes costs a life and moves on. It is not scored as
+        // a wrong answer in the tape either - you did not answer, and the
+        // post-game analysis compares the time you took on answers you gave.
+        const lives = state.lives - 1;
+        const next: RunState = {
+          ...state,
+          index: state.index + 1,
+          attempted: state.attempted + 1,
+          lives,
+          streak: 0,
+          questionEndsAt: action.now + windowMs(state.index + 1),
+          shownAt: action.now,
+          feedback: { id: state.index, ok: false },
+          tape: [
+            ...state.tape,
+            { id: state.index, ok: false, ms: windowMs(state.index) },
+          ],
+        };
+        return lives <= 0 ? { ...next, phase: "done" } : next;
       }
 
       case "finish":
@@ -191,17 +257,24 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
   const challenge = useChallenge();
   const assist = useAssist();
   const [best, recordBest] = usePersonalBest(game.storageKey);
+  // A separate store, deliberately. An endless record and a timed score are
+  // different quantities and must never sort against each other.
+  const [endlessBest, recordEndless] = usePersonalBest(endlessKey(game.storageKey));
+  const [mode, setMode] = useState<RunMode>("timed");
+  const endless = run.mode === "endless";
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
   // records what the player actually finished with. Computed here rather than
   // beside the results screen so the persist effect below can see it.
   const runMultiplier = accuracyMultiplier(run.correct, run.attempted);
-  const runPoints = finalScore(run.points, run.correct, run.attempted);
+  const runPoints = endless
+    ? run.points
+    : finalScore(run.points, run.correct, run.attempted);
 
   const start = useCallback(() => {
-    dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
+    dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now(), mode });
     setNow(Date.now());
-  }, [challenge]);
+  }, [challenge, mode]);
 
   const answer = useCallback(
     (chosen: number) => {
@@ -215,15 +288,32 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
     const id = window.setInterval(() => {
       const t = Date.now();
       setNow(t);
-      if (t >= run.endsAt) dispatch({ type: "finish" });
+      // Endless has no round clock - `endsAt` is set past the end of time - so
+      // the deadline that matters is the one on the question in front of you.
+      if (run.mode === "endless") {
+        if (t >= run.questionEndsAt) dispatch({ type: "timeout", now: t });
+      } else if (t >= run.endsAt) {
+        dispatch({ type: "finish" });
+      }
     }, 100);
     return () => window.clearInterval(id);
-  }, [run.phase, run.endsAt]);
+  }, [run.phase, run.mode, run.endsAt, run.questionEndsAt]);
 
   useEffect(() => {
-    // An assisted run never touches the personal best.
-    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
-  }, [run.phase, run.assisted, runPoints, recordBest]);
+    // An assisted run never touches either personal best.
+    if (run.phase !== "done" || run.assisted) return;
+    if (run.mode === "endless") recordEndless(endlessRecord(run.cleared, run.points));
+    else recordBest(runPoints);
+  }, [
+    run.phase,
+    run.assisted,
+    run.mode,
+    run.cleared,
+    run.points,
+    runPoints,
+    recordBest,
+    recordEndless,
+  ]);
 
   const question = useMemo(
     () => (run.phase === "running" ? game.questionAt(run.seed, run.index) : null),
@@ -268,9 +358,14 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
         correct={run.correct}
         attempted={run.attempted}
         bestStreak={run.bestStreak}
-        personalBest={best}
-        isPersonalBest={runPoints >= best && runPoints > 0}
-        challengeTarget={challenge?.target ?? 0}
+        personalBest={endless ? unpackRecord(endlessBest).cleared : best}
+        isPersonalBest={
+          endless
+            ? endlessRecord(run.cleared, run.points) >= endlessBest && run.cleared > 0
+            : runPoints >= best && runPoints > 0
+        }
+        challengeTarget={endless ? 0 : challenge?.target ?? 0}
+        endless={endless ? { cleared: run.cleared, lives: run.lives } : undefined}
         mistakes={run.mistakes}
         tape={run.tape}
         assisted={run.assisted}
@@ -317,13 +412,47 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
           </div>
         )}
 
+        {/* Two modes, chosen before the run rather than mid-run, because a
+            mode switch halfway through is a run that belongs on neither
+            board. A challenge link pins you to timed - the whole point of the
+            link is that both people played the same thing. */}
+        {!challenge && (
+          <div className="mt-9 flex border border-hairline">
+            {(["timed", "endless"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                aria-pressed={mode === m}
+                className={`px-5 py-2 text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                  mode === m
+                    ? "bg-accent/15 text-accent-ink"
+                    : "text-secondary hover:text-primary"
+                }`}
+              >
+                {m === "timed" ? "60 seconds" : "Endless"}
+              </button>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={start}
-          className="mt-10 rounded-control border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="mt-6 rounded-control border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
           {game.intro.startLabel}
         </button>
-        <p className="mt-5 text-[11px] text-muted">{game.intro.hint}</p>
+        <p className="mt-5 max-w-sm text-[11px] leading-relaxed text-muted">
+          {mode === "endless" && !challenge
+            ? `Three lives. No round clock - each question has its own, starting at ${
+                windowMs(0) / 1000
+              } seconds and closing to ${windowMs(99) / 1000} by question forty. A wrong answer or a closed window costs a life.`
+            : game.intro.hint}
+        </p>
+        {mode === "endless" && !challenge && unpackRecord(endlessBest).cleared > 0 && (
+          <p className="tabular mt-2 text-[11px] text-muted">
+            furthest {unpackRecord(endlessBest).cleared}
+          </p>
+        )}
         {game.intro.learnHref && (
           <a
             href={game.intro.learnHref}
@@ -352,8 +481,8 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
       <Rail
         assisted={assist}
         code={game.code}
-        remainingMs={remaining}
-        totalMs={game.roundMs}
+        remainingMs={endless ? Math.max(0, run.questionEndsAt - now) : remaining}
+        totalMs={endless ? windowMs(run.index) : game.roundMs}
         penalty={
           run.feedback && !run.feedback.ok
             ? { id: run.feedback.id, label: `−${Math.round(game.wrongPenaltyMs / 1000)}s` }
@@ -365,6 +494,16 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
             value: `d${String(question ? game.difficultyOf(question) : 1).padStart(2, "0")}`,
           },
           { label: "Q", value: String(run.index + 1) },
+          ...(endless
+            ? [
+                {
+                  label: "Lives",
+                  value: "●".repeat(run.lives) || "—",
+                  tone: (run.lives <= 1 ? "neg" : "pos") as "neg" | "pos",
+                },
+                { label: "Cleared", value: String(run.cleared) },
+              ]
+            : []),
           { label: "Score", value: run.points.toLocaleString() },
           {
             label: "Streak",

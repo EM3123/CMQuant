@@ -37,6 +37,7 @@ export function ResultsCard({
   challengeTarget,
   mistakes,
   tape = [],
+  endless,
   assisted = false,
   onReplay,
 }: {
@@ -62,6 +63,12 @@ export function ResultsCard({
    * renders nothing when the run was too short to say anything about.
    */
   tape?: Answer[];
+  /**
+   * Present only on an endless run. Depth is the headline there, not points -
+   * how far you got is the thing a person remembers and repeats, and the
+   * points exist to separate two runs that died on the same question.
+   */
+  endless?: { cleared: number; lives: number };
   /**
    * Assist mode was on for at least one answer. The run is shown but does not
    * count anywhere: no daily result, no score on the shared link, and the card
@@ -137,13 +144,15 @@ export function ResultsCard({
         )}
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">Score</span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
+            {endless ? "Cleared" : "Score"}
+          </span>
           <span
             className={`tabular mt-1 text-[4.5rem] leading-none ${
               isPersonalBest ? "text-rare" : "text-primary"
             }`}
           >
-            {points.toLocaleString()}
+            {endless ? endless.cleared.toLocaleString() : points.toLocaleString()}
           </span>
           {assisted ? (
             <span className="mt-3 text-[10px] uppercase tracking-[0.18em] text-muted">
@@ -155,7 +164,8 @@ export function ResultsCard({
             </span>
           ) : (
             <span className="tabular mt-3 text-[11px] text-muted">
-              best {personalBest.toLocaleString()}
+              {endless ? "furthest " : "best "}
+              {personalBest.toLocaleString()}
             </span>
           )}
 
@@ -172,9 +182,17 @@ export function ResultsCard({
           )}
         </div>
 
+        {endless && (
+          <div className="mb-4 text-center">
+            <span className="tabular text-[11px] text-muted">
+              {points.toLocaleString()} points
+            </span>
+          </div>
+        )}
+
         {/* Show the multiplier and what it acted on. A score that silently
             shrank by two thirds reads as a bug rather than a penalty. */}
-        {attempted > 0 && accuracyMultiplier !== 1 && (
+        {!endless && attempted > 0 && accuracyMultiplier !== 1 && (
           <div className="mb-4 text-center">
             <span className="tabular text-[11px] text-muted">
               {rawPoints.toLocaleString()} earned
