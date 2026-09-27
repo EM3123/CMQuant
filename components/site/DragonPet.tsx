@@ -156,22 +156,32 @@ export function DragonPet({ size = 132 }: { size?: number }) {
           />
         </div>
 
-        {/* You, rather than the dragon: level and rank from all-time XP. */}
-        <div className="mt-5 flex items-baseline justify-between">
-          <span className="text-[11px] uppercase tracking-[0.18em]" style={{ color: rank.tone }}>
-            {rank.name}
-          </span>
-          <span className="tabular text-[10px] text-muted">lvl {level.level}</span>
+        {/* You, rather than the dragon, and deliberately quieter.
+            The stage above is the ladder that counts, because it only moves
+            when somebody comes back on a new day. This one moves every run,
+            so it carries no "lvl" of its own here - two level numbers on one
+            animal is two answers to the same question. The career number
+            lives on /firm, where it is the subject rather than the trim. */}
+        <div className="mt-6 border-t border-hairline pt-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted">You</span>
+            <span
+              className="text-[10px] uppercase tracking-[0.18em]"
+              style={{ color: rank.tone }}
+            >
+              {rank.name}
+            </span>
+          </div>
+          <div className="mt-2 h-px w-full bg-hairline">
+            <div
+              className="h-px transition-[width] duration-500"
+              style={{ width: `${Math.round(level.fraction * 100)}%`, backgroundColor: rank.tone }}
+            />
+          </div>
+          <p className="tabular mt-2 text-[10px] text-secondary">
+            {level.into}/{level.needed} XP to the next rung
+          </p>
         </div>
-        <div className="mt-2 h-px w-full bg-hairline">
-          <div
-            className="h-px transition-[width] duration-500"
-            style={{ width: `${Math.round(level.fraction * 100)}%`, backgroundColor: rank.tone }}
-          />
-        </div>
-        <p className="tabular mt-2 text-[10px] text-secondary">
-          {level.into}/{level.needed} XP to level {level.level + 1}
-        </p>
       </div>
     </div>
   );

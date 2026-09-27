@@ -233,6 +233,28 @@ load-bearing: change `"Pot Odds"` to `"Pot odds"` in either place and the
 daily silently stops recording for that game. `verify-daily` follows each
 route to the component it renders and fails when the two drift.
 
+## Two ladders, and which one is the level
+
+The product has two progress systems and they are not equal.
+
+**Fed days are the level.** The dragon's stage comes from `lib/pet.ts` and
+counts distinct days it was fed - a day you came back and did enough to
+cross `FEED_TARGET`. Five stages, at 1, 3, 7, 21 and 60 fed days. This is the
+thing the product is actually asking for, so it gets the headline, the
+banner on the results screen, and the word "level" wherever the dragon is on
+screen.
+
+**XP and rank are the flavour.** `lib/progression.ts` pays XP for every
+finished run and turns the total into a level and a rank. It moves constantly,
+which is what makes it satisfying and also what makes it cheap: ten runs in
+one afternoon climbs it and says nothing about whether anybody came back the
+next day. It is the subject on `/firm`, where it is a career rather than a
+pet, and it is trim everywhere else.
+
+The rule that follows: **never show two level numbers for the same thing.**
+The dragon card used to print `lvl 3/5` from fed days and `lvl 11` from XP
+one line apart, which is two answers to one question. The dragon card now
+carries the stage and the rank NAME, and the career number lives on `/firm`.
 ## Post-game insights
 
 `lib/insights.ts` turns a finished run into at most three findings, shown
