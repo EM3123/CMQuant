@@ -116,10 +116,33 @@ if (worstCase >= 99_999) {
 /* Endless must never share a key with the timed board                        */
 /* -------------------------------------------------------------------------- */
 
-for (const game of ["equalize", "flash", "approx", "doomsday", "memorytiles", "potodds", "outs", "combinatorics"]) {
-  const key = endlessKey(game);
-  if (key === `cmquant:${game}:best`) failures.push(`${game} endless shares the timed key`);
-  if (!key.includes("endless")) failures.push(`${game} endless key is not marked: ${key}`);
+// The real timed keys, exactly as the components pass them, so the test
+// cannot pass on a shape the app never uses. It did once: the app handed in a
+// full key and the test handed in a bare name, and the doubled prefix that
+// produced went unnoticed until it showed up in localStorage.
+const TIMED_KEYS = [
+  "cmquant:equalize:best",
+  "cmquant:flash:best",
+  "cmquant:approx:best",
+  "cmquant:doomsday:best",
+  "cmquant:memorytiles:best",
+  "cmquant:potodds:best",
+  "cmquant:outs:best",
+  "cmquant:combinatorics:best",
+  "cmquant:equity:best",
+];
+
+const endlessKeys = new Set<string>();
+for (const timed of TIMED_KEYS) {
+  const key = endlessKey(timed);
+  if (key === timed) failures.push(`${timed} endless shares the timed key`);
+  if (!key.endsWith(":endless:best")) failures.push(`bad endless key: ${key}`);
+  if (key.split("cmquant:").length > 2) failures.push(`doubled prefix: ${key}`);
+  if (endlessKeys.has(key)) failures.push(`two games share the endless key ${key}`);
+  endlessKeys.add(key);
+}
+if (endlessKey("cmquant:outs:best") !== "cmquant:outs:endless:best") {
+  failures.push(`unexpected shape: ${endlessKey("cmquant:outs:best")}`);
 }
 
 console.log(`window indices    121`);

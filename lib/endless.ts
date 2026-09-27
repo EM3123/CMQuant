@@ -67,9 +67,17 @@ export function livesAfter(lives: number, outcome: EndlessOutcome): number {
   return outcome === "correct" ? lives : Math.max(0, lives - 1);
 }
 
-/** Storage key for an endless best. Never the same key as the timed best. */
-export function endlessKey(game: string): string {
-  return `cmquant:${game}:endless:best`;
+/**
+ * Storage key for an endless best, derived from the timed one.
+ *
+ * Takes the timed key rather than a bare game name, because the timed key is
+ * what every caller already has. Building it from a name instead produced
+ * `cmquant:cmquant:potodds:best:endless:best` in the browser - unique and
+ * separate, so nothing was broken, but a key nobody could read and nothing
+ * the test was checking.
+ */
+export function endlessKey(timedKey: string): string {
+  return `${timedKey.replace(/:best$/, "")}:endless:best`;
 }
 
 /**

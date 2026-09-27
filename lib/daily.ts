@@ -20,6 +20,12 @@ export type DailyGame = {
 /**
  * The rotation. Only games that are actually live belong here - a daily that
  * lands on an unbuilt game is a broken day, not a coming-soon notice.
+ *
+ * The reverse failure is quieter and is the one that actually happened: three
+ * games shipped, went live on their wing index, and were never added here, so
+ * the daily could never land on a third of the catalogue and nothing ever
+ * said so. `scripts/verify-daily.ts` now walks `app/g/` and fails if a route
+ * exists that this list has never heard of.
  */
 export const DAILY_ROTATION: DailyGame[] = [
   { name: "Equalize", path: "/g/equalize", blurb: "Pick the larger expression." },
@@ -28,6 +34,9 @@ export const DAILY_ROTATION: DailyGame[] = [
   { name: "Doomsday", path: "/g/doomsday", blurb: "Name the weekday." },
   { name: "Memory Tiles", path: "/g/memory-tiles", blurb: "Tap the pattern back." },
   { name: "Pot Odds", path: "/g/pot-odds", blurb: "Price the call." },
+  { name: "Outs", path: "/g/outs", blurb: "Count the cards that save the hand." },
+  { name: "Combinatorics", path: "/g/combinatorics", blurb: "Count what the board left behind." },
+  { name: "Equity", path: "/g/equity", blurb: "Both hands face up, one card to come." },
 ];
 
 /**
