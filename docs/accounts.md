@@ -50,7 +50,42 @@ what it was.
    "Success. No rows returned."
 3. Open **Table Editor**: you should now see `profiles` and `runs`.
 
-### 3. Make the sign-in email send a code
+### 3. Connect an email sender (custom SMTP)
+
+Supabase's built-in email is for trying things out only: it will not let you
+edit the email templates, it sends only a handful of emails an hour, and it
+may only deliver to members of your Supabase team. So CMQuant sends its sign-in
+emails through an ordinary Gmail account instead. It is free, needs no domain,
+and Gmail allows around 500 emails a day.
+
+1. **Make a Gmail account just for the site**, e.g. `cmquant.game@gmail.com`,
+   rather than using a personal one. The app password below can read and send
+   that account's mail, so it should hold nothing else.
+2. In that account, turn on **2-Step Verification**
+   (myaccount.google.com, then **Security**). App passwords require it.
+3. Go to **myaccount.google.com/apppasswords**, create one named `Supabase`,
+   and copy the 16-character password (the spaces do not matter). Google
+   shows it once.
+4. In Supabase: **Authentication**, **Emails**, the **SMTP Settings** tab.
+   Turn on **Enable custom SMTP** and fill in:
+
+   | Field | Value |
+   |---|---|
+   | Sender email | the Gmail address |
+   | Sender name | `CMQuant` |
+   | Host | `smtp.gmail.com` |
+   | Port | `465` |
+   | Username | the Gmail address |
+   | Password | the app password |
+
+   Leave the minimum interval as it is, and save.
+5. Under **Authentication**, **Rate Limits**, "emails sent per hour" can now be
+   raised. 30 is plenty to start.
+
+If sending fails, try port `587`, and check the app password was pasted with no
+extra characters.
+
+### 4. Make the sign-in email send a code
 
 Supabase's default emails contain a link. CMQuant asks for the code instead,
 because a link has to return to an address Supabase trusts (every Vercel
@@ -72,7 +107,7 @@ on your phone while playing on a laptop.
 
 Email sign-in is on by default. Leave "Confirm email" on.
 
-### 4. Copy the keys into Vercel
+### 5. Copy the keys into Vercel
 
 1. In Supabase, open **Project Settings**, then **API Keys**. You need:
    - the **Project URL** (also under the **Connect** button at the top, or
@@ -95,7 +130,7 @@ Email sign-in is on by default. Leave "Confirm email" on.
    built, so they only take effect on the next deployment: **Deployments**,
    the latest one, **...**, **Redeploy**.
 
-### 5. Try it
+### 6. Try it
 
 Open the site, click **Sign in** in the top bar, enter your email, type the
 code from the email, and pick a username. Play any game; under the results
@@ -109,12 +144,10 @@ and restart `npm run dev`.
 
 ## Limits of the free setup
 
-- **Email sending is heavily rate-limited.** Supabase's built-in email
-  service only sends a few emails an hour and is meant for testing. Fine for
-  the two of you; before telling people about the site, connect a real email
-  provider under **Authentication, Emails, SMTP Settings**. Resend's free
-  plan (3,000 emails a month) is the usual choice; it needs a domain you own
-  to send from.
+- **About 500 sign-in emails a day** through Gmail. A player stays signed in
+  on a device, so this is new sign-ins, not visits. If the site outgrows it,
+  buy a domain and move the SMTP settings to a provider like Resend (3,000
+  emails a month free); nothing in the code changes.
 - **Free projects pause after a week with no activity.** A paused project is
   restored from the Supabase dashboard; nothing is lost. Once people are
   playing daily, this will not trigger.
