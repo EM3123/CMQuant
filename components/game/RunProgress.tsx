@@ -81,9 +81,13 @@ export function RunProgress({
       <div>
         <div className="flex items-baseline justify-between">
           <span className="tabular text-sm text-data-pos">+{result.gain.xp} XP</span>
-          <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: rank.tone }}>
+          <Link
+            href="/firm"
+            className="text-[10px] uppercase tracking-[0.18em] underline-offset-4 hover:underline"
+            style={{ color: rank.tone }}
+          >
             Lvl {after.level} · {rank.name}
-          </span>
+          </Link>
         </div>
         <div className="mt-2 h-px w-full bg-hairline">
           <div

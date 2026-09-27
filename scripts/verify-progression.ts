@@ -17,6 +17,11 @@ import {
   rankFor,
   nextRank,
   totalXp,
+  totalRuns,
+  playedDays,
+  currentStreak,
+  longestStreak,
+  shiftDay,
   xpForLevel,
   xpForRun,
   xpToNext,
@@ -161,6 +166,46 @@ check(nextRank(1)?.name === RANKS[1].name, "the next rank after level 1 is wrong
   );
   // Across a month boundary, not just within one.
   check(moodFor(fedOn(["2026-09-30"]), "2026-10-01") === "peckish", "month boundary miscounted");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Streaks and counts                                                         */
+/* -------------------------------------------------------------------------- */
+
+{
+  const on = (days: string[]): Ledger =>
+    Object.fromEntries(days.map((d) => [d, { xp: 20, runs: 2, daily: false }]));
+
+  check(shiftDay("2026-09-30", 1) === "2026-10-01", "shiftDay across a month is wrong");
+  check(shiftDay("2026-03-01", -1) === "2026-02-28", "shiftDay back across February is wrong");
+  check(shiftDay("2024-03-01", -1) === "2024-02-29", "shiftDay ignores a leap year");
+
+  const three = on(["2026-09-25", "2026-09-26", "2026-09-27"]);
+  check(currentStreak(three, "2026-09-27") === 3, "a three-day streak ending today is not 3");
+  // Today not played yet: the streak is still alive, counted from yesterday.
+  check(currentStreak(three, "2026-09-28") === 3, "the streak died before the day was over");
+  check(currentStreak(three, "2026-09-29") === 0, "a missed day did not end the streak");
+  check(currentStreak({}, "2026-09-27") === 0, "an empty ledger has a streak");
+
+  const gappy = on(["2026-09-01", "2026-09-02", "2026-09-04", "2026-09-05", "2026-09-06", "2026-09-10"]);
+  check(longestStreak(gappy) === 3, "longest streak across gaps is not 3");
+  check(longestStreak({}) === 0, "an empty ledger has a longest streak");
+  check(longestStreak(on(["2026-12-31", "2027-01-01"])) === 2, "a streak across new year broke");
+
+  check(totalRuns(gappy) === 12, "total runs is not the sum of each day");
+  check(playedDays({ a: { xp: 0, runs: 0, daily: false }, b: { xp: 5, runs: 1, daily: false } }).join() === "b",
+    "a day with no runs counts as played");
+  // Exhaustive: over a year of random-looking gaps, the current streak never
+  // exceeds the longest, and never exceeds the days played.
+  const days: string[] = [];
+  for (let i = 0; i < 365; i++) if ((i * 7919) % 11 !== 0) days.push(shiftDay("2026-01-01", i));
+  const year = on(days);
+  for (let i = 0; i < 366; i++) {
+    const today = shiftDay("2026-01-01", i);
+    const s = currentStreak(year, today);
+    if (s > longestStreak(year)) failures.push(`current streak above longest on ${today}`);
+    if (s > playedDays(year).length) failures.push(`streak above days played on ${today}`);
+  }
 }
 
 console.log(`xp rules          finish ${XP_RULES.finish}, +${XP_RULES.perCorrect}/correct, first ${XP_RULES.firstOfDay}, daily ${XP_RULES.daily}, half after ${XP_RULES.fullRateRuns}`);

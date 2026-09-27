@@ -34,14 +34,19 @@ export default function DailyPage() {
 
   return (
     <Wing wing="comp">
-      <nav className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-2">
+      <nav className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline px-4 py-2">
         <Wordmark />
-        <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
+        <div className="flex items-center gap-3 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-secondary sm:gap-5 sm:tracking-[0.18em]">
           <Link href="/comp" className="transition-colors hover:text-primary">
             Comp
           </Link>
           <Link href="/poker" className="transition-colors hover:text-primary">
-            Poker Lab
+            <span className="sm:hidden">Poker</span>
+            <span className="max-sm:hidden">Poker Lab</span>
+          </Link>
+          <Link href="/firm" className="transition-colors hover:text-primary">
+            <span className="sm:hidden">Firm</span>
+            <span className="max-sm:hidden">My Firm</span>
           </Link>
           <AccountLink />
         </div>
