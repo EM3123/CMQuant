@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Answer } from "@/lib/insights";
 
 /**
  * The status rail that runs across the top of every game in play.
@@ -135,7 +136,7 @@ export function Tape({
   entries,
   hint,
 }: {
-  entries: { id: number; ok: boolean; ms: number }[];
+  entries: Answer[];
   hint: ReactNode;
 }) {
   const shown = entries.slice(-14);

@@ -23,20 +23,27 @@ const failures: Failure[] = [];
 const keysOf = (out: Insight[]) => out.map((i) => i.key);
 
 function run(
-  spec: { ok: boolean; ms: number }[],
+  spec: { ok: boolean; ms: number; timedOut?: boolean }[],
   mistakes: Record<string, { label: string; fix: string; count: number }> = {}
 ): Insight[] {
   const answers: Answer[] = spec.map((s, id) => ({ id, ...s }));
   return runInsights(answers, mistakes);
 }
 
+/** A closed window in endless: the whole window elapsed, nothing was chosen. */
+const timeout = (ms: number) => ({ ok: false, ms, timedOut: true });
+
+let checks = 0;
+
 function expectKey(label: string, out: Insight[], key: string) {
+  checks++;
   if (!keysOf(out).includes(key)) {
     failures.push({ where: label, why: `expected "${key}", got [${keysOf(out).join(", ")}]` });
   }
 }
 
 function expectNoKey(label: string, out: Insight[], key: string) {
+  checks++;
   if (keysOf(out).includes(key)) {
     failures.push({ where: label, why: `did not expect "${key}"` });
   }
@@ -190,6 +197,124 @@ for (let n = 0; n <= 5; n++) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Closed windows are not answers                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Endless puts a window on every question and a closed window in the tape. It
+ * carries `ms` equal to the entire window, which is the largest value the tape
+ * can hold, so anything that reads times without filtering these gets dragged
+ * around by them - and the further into a run you are, the more of them there
+ * tend to be.
+ *
+ * The specific lie this prevents: eight steady right answers and five closed
+ * windows is a player who stopped playing, and the old code called it grinding
+ * through questions it had no method for.
+ */
+expectNoKey(
+  "closed windows are not grinding",
+  run([
+    ...Array.from({ length: 8 }, () => ({ ok: true, ms: 3000 })),
+    ...Array.from({ length: 5 }, () => timeout(12_000)),
+  ]),
+  "stuck"
+);
+
+// And they must not create the opposite reading either.
+expectNoKey(
+  "closed windows are not rushing",
+  run([
+    ...Array.from({ length: 8 }, () => ({ ok: true, ms: 3000 })),
+    ...Array.from({ length: 5 }, () => timeout(12_000)),
+  ]),
+  "rushing"
+);
+
+// A real pace finding still survives alongside them: the wrong ANSWERS are
+// genuinely fast, and the closed windows neither create nor cancel that.
+expectKey(
+  "real rushing survives closed windows",
+  run([
+    ...Array.from({ length: 8 }, () => ({ ok: true, ms: 6000 })),
+    ...Array.from({ length: 5 }, () => ({ ok: false, ms: 1500 })),
+    ...Array.from({ length: 3 }, () => timeout(12_000)),
+  ]),
+  "rushing"
+);
+
+// A steady run is still steady when the windows that closed are set aside.
+expectKey(
+  "closed windows do not break a metronome",
+  run([
+    ...Array.from({ length: 12 }, () => ({ ok: true, ms: 3000 })),
+    ...Array.from({ length: 3 }, () => timeout(12_000)),
+  ]),
+  "metronome"
+);
+
+// Accuracy findings DO count them - a window you let close is a question you
+// did not get right, and pretending otherwise would flatter the run.
+expectKey(
+  "closed windows count against accuracy",
+  run([
+    ...Array.from({ length: 8 }, () => ({ ok: true, ms: 3000 })),
+    ...Array.from({ length: 8 }, (_, i) => (i < 2 ? { ok: true, ms: 3000 } : timeout(9000))),
+  ]),
+  "faded"
+);
+
+// The sentence, not just the arithmetic. If the biggest slice of the run was a
+// window nobody answered, the card must not say the player got it wrong.
+{
+  checks++;
+  const out = run([
+    ...Array.from({ length: 9 }, () => ({ ok: true, ms: 2000 })),
+    timeout(20_000),
+  ]);
+  const slow = out.find((i) => i.key === "one-slow");
+  if (!slow) {
+    failures.push({ where: "timeout is the slowest", why: "one-slow did not appear" });
+  } else if (!slow.detail.includes("the window closed on it")) {
+    failures.push({ where: "timeout is the slowest", why: `says: ${slow.detail}` });
+  } else if (/you got it (right|wrong)/.test(slow.detail)) {
+    failures.push({ where: "timeout is the slowest", why: "claims an answer was given" });
+  }
+}
+
+// The summary figure is per answer, so closed windows cannot move it.
+{
+  checks++;
+  const steady: Answer[] = Array.from({ length: 10 }, (_, id) => ({ id, ok: true, ms: 2000 }));
+  const withWindows: Answer[] = [
+    ...steady,
+    ...Array.from({ length: 6 }, (_, i) => ({ id: 10 + i, ok: false, ms: 12_000, timedOut: true })),
+  ];
+  if (medianSeconds(steady) !== medianSeconds(withWindows)) {
+    failures.push({
+      where: "median seconds",
+      why: `moved from ${medianSeconds(steady)} to ${medianSeconds(withWindows)}`,
+    });
+  }
+}
+
+// A run that is nothing but closed windows has nothing to say about answering,
+// and must not divide by the zero answers it has.
+{
+  checks++;
+  const allWindows = Array.from({ length: 20 }, () => timeout(8000));
+  try {
+    const out = run(allWindows);
+    for (const i of out) {
+      if (/NaN|Infinity|undefined/.test(i.headline + i.detail)) {
+        failures.push({ where: "all windows", why: `bad number in ${i.key}` });
+      }
+    }
+  } catch (err) {
+    failures.push({ where: "all windows", why: `threw: ${(err as Error).message}` });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Invariants, over random runs                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -199,11 +324,17 @@ const seen = new Set<string>();
 
 for (let n = 0; n < 10_000; n++) {
   const count = randInt(rng, 0, 40);
-  const answers: Answer[] = Array.from({ length: count }, (_, id) => ({
-    id,
-    ok: rng() < 0.6,
-    ms: randInt(rng, 120, 25_000),
-  }));
+  const answers: Answer[] = Array.from({ length: count }, (_, id) => {
+    // A fifth of entries are closed windows, which is roughly what a bad
+    // endless run looks like near the end.
+    const out = rng() < 0.2;
+    return {
+      id,
+      ok: out ? false : rng() < 0.6,
+      ms: randInt(rng, 120, 25_000),
+      ...(out ? { timedOut: true } : {}),
+    };
+  });
 
   const mistakes: Record<string, { label: string; fix: string; count: number }> = {};
   if (rng() < 0.4) {
@@ -265,7 +396,7 @@ const EXPECTED = [
 ];
 const never = EXPECTED.filter((k) => !seen.has(k));
 
-console.log(`constructed runs  ${16}`);
+console.log(`constructed cases ${checks}`);
 console.log(`random runs       ${fuzzed.toLocaleString()}`);
 console.log(`failures          ${failures.length}`);
 console.log(`findings reached  ${[...seen].sort().join(", ")}`);

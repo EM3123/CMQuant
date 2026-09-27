@@ -14,7 +14,7 @@
  * rather than a silence.
  */
 
-import { readdirSync, existsSync } from "node:fs";
+import { readdirSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DAILY_ROTATION, dailyGame, dailySeed, todayKey } from "../lib/daily";
 
@@ -53,6 +53,52 @@ if (new Set(DAILY_ROTATION.map((g) => g.name)).size !== DAILY_ROTATION.length) {
 for (const g of DAILY_ROTATION) {
   if (!g.blurb.trim()) failures.push(`${g.path} has no blurb`);
   if (!g.blurb.trim().endsWith(".")) failures.push(`${g.path} blurb is not a sentence`);
+}
+
+/* -------------------------------------------------------------------------- */
+/* The rotation's name is the name the game reports                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * ResultsCard records a daily result only when the finished run is BOTH today's
+ * seed and today's game, which it decides by comparing the game's own name
+ * against `dailyGame(dayKey).name`. That makes these two strings, written in
+ * two files by two people, load-bearing: rename "Pot Odds" to "Pot odds" in one
+ * of them and the daily silently stops recording for that game. Nothing else
+ * would break, and nobody would notice until somebody compared two lists again -
+ * which is the exact failure at the top of this file.
+ *
+ * So: follow each route to the component it renders and read the name back out.
+ */
+function reportedName(routePath: string): string | null {
+  const page = readFileSync(join(process.cwd(), "app", routePath.slice(1), "page.tsx"), "utf8");
+
+  // Only the component whose name ends in "Game" - Wing and SiteFooter are on
+  // every page and have fields of their own.
+  const imports = [...page.matchAll(/from "@\/(components\/[^"]+Game)"/g)].map(
+    (m) => m[1]
+  );
+
+  for (const rel of imports) {
+    const file = join(process.cwd(), `${rel}.tsx`);
+    if (!existsSync(file)) continue;
+    const src = readFileSync(file, "utf8");
+    // Bespoke reducers pass a literal; ChoiceRun games carry it on the game.
+    const literal = src.match(/gameName="([^"]+)"/);
+    if (literal) return literal[1];
+    const field = src.match(/\bname:\s*"([^"]+)"/);
+    if (field) return field[1];
+  }
+  return null;
+}
+
+for (const g of DAILY_ROTATION) {
+  const reported = reportedName(g.path);
+  if (reported === null) {
+    failures.push(`${g.path} renders no component that names itself`);
+  } else if (reported !== g.name) {
+    failures.push(`${g.path} calls itself "${reported}", the rotation calls it "${g.name}"`);
+  }
 }
 
 /* -------------------------------------------------------------------------- */

@@ -6,6 +6,7 @@ import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { useAssist } from "@/lib/assist";
 import {
   LIVES,
+  livesAfter,
   windowMs,
   endlessScore,
   endlessKey,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/endless";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
+import type { Answer } from "@/lib/insights";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -98,7 +100,7 @@ type RunState = {
   mistakes: MistakeTally;
   feedback: { id: number; ok: boolean } | null;
   /** The tape. Every answer with how long it took, oldest first. */
-  tape: { id: number; ok: boolean; ms: number }[];
+  tape: Answer[];
   /** Sticky. One assisted answer marks the whole run, and it never unsets. */
   assisted: boolean;
   /** Endless only. Lives left, and the deadline for the question on screen. */
@@ -184,7 +186,9 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
         }
 
         const endless = state.mode === "endless";
-        const lives = endless && !ok ? state.lives - 1 : state.lives;
+        const lives = endless
+          ? livesAfter(state.lives, ok ? "correct" : "wrong")
+          : state.lives;
 
         const next: RunState = {
           ...state,
@@ -223,10 +227,12 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
       case "timeout": {
         if (state.phase !== "running" || state.mode !== "endless") return state;
 
-        // A window that closes costs a life and moves on. It is not scored as
-        // a wrong answer in the tape either - you did not answer, and the
-        // post-game analysis compares the time you took on answers you gave.
-        const lives = state.lives - 1;
+        // A window that closes costs a life and moves on. It goes into the
+        // tape flagged as a timeout rather than left out of it: the question
+        // was on screen for the whole window, so it belongs in the accuracy
+        // and run-time findings - but nobody answered it, so lib/insights
+        // keeps it out of every finding whose sentence says "answer".
+        const lives = livesAfter(state.lives, "timeout");
         const next: RunState = {
           ...state,
           index: state.index + 1,
@@ -238,7 +244,7 @@ function makeReducer<Q>(game: ChoiceGame<Q>) {
           feedback: { id: state.index, ok: false },
           tape: [
             ...state.tape,
-            { id: state.index, ok: false, ms: windowMs(state.index) },
+            { id: state.index, ok: false, ms: windowMs(state.index), timedOut: true },
           ],
         };
         return lives <= 0 ? { ...next, phase: "done" } : next;

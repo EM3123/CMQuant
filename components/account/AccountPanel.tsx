@@ -97,10 +97,14 @@ function SignIn() {
   if (!sentTo) {
     return (
       <Frame title="Sign in">
+        {/* What it does TODAY. This said "get on the leaderboards", and
+            there is no leaderboard - the page was selling a feature that does
+            not exist, which is the one thing a sign-up screen cannot do. */}
         <p className="text-[12px] leading-relaxed text-secondary">
-          Save your runs and get on the leaderboards. Enter your email and we
-          will send you a six-digit code. No password, and a new account is
-          made the first time you sign in.
+          Every finished run is saved to your account, so clearing your browser
+          no longer wipes your history. Leaderboards are being built and are not
+          live yet. Enter your email and we will send you a six-digit code. No
+          password, and a new account is made the first time you sign in.
         </p>
         <form onSubmit={sendCode} className="mt-5 flex flex-col gap-3">
           <Field

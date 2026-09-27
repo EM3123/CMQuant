@@ -220,6 +220,19 @@ action that costs a life, and a `mode` that can only be set at `start`.
 
 Flash and Memory Tiles do not have it yet.
 
+**The daily is timed, on one game.** `ResultsCard` records a daily result
+only when the finished run is today's seed AND today's game AND not endless -
+the same three conditions `app/api/runs` applies on the server. Two of those
+were missing in the browser: the seed `daily-<date>` is guessable and can be
+pasted onto any game's URL, and an endless run started from the daily link
+keeps the seed while scoring by a completely different model.
+
+That game check compares `dailyGame(dayKey).name` against the name the
+component passes to the card, which makes one string in two files
+load-bearing: change `"Pot Odds"` to `"Pot odds"` in either place and the
+daily silently stops recording for that game. `verify-daily` follows each
+route to the component it renders and fails when the two drift.
+
 ## Post-game insights
 
 `lib/insights.ts` turns a finished run into at most three findings, shown

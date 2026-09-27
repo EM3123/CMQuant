@@ -11,6 +11,7 @@ import { makeSeed } from "@/lib/rng";
 import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
+import type { Answer } from "@/lib/insights";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -36,7 +37,7 @@ type RunState = {
   assisted: boolean;
   feedback: { id: number; ok: boolean } | null;
   /** The tape. Every answer with how long it took, oldest first. */
-  tape: { id: number; ok: boolean; ms: number }[];
+  tape: Answer[];
 };
 
 const EMPTY: RunState = {

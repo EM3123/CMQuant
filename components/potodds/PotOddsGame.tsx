@@ -16,6 +16,7 @@ import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { useAssist } from "@/lib/assist";
 import {
   LIVES,
+  livesAfter,
   windowMs,
   endlessScore,
   endlessKey,
@@ -34,6 +35,7 @@ import {
 import { CardFan } from "@/components/cards/PlayingCard";
 import { Felt } from "@/components/poker/Felt";
 import { deal } from "@/lib/cards";
+import type { Answer } from "@/lib/insights";
 
 type Phase = "idle" | "running" | "done";
 
@@ -52,7 +54,7 @@ type RunState = {
   mistakes: Record<string, { label: string; fix: string; count: number }>;
   feedback: { id: number; ok: boolean; chosen: number } | null;
   /** The tape. Every answer with how long it took, oldest first. */
-  tape: { id: number; ok: boolean; ms: number }[];
+  tape: Answer[];
   /** Sticky. One assisted answer marks the whole run, and it never unsets. */
   assisted: boolean;
   /** Endless only. Lives left, the deadline on the spot in front of you, and
@@ -107,7 +109,10 @@ function reducer(state: RunState, action: Action): RunState {
 
     case "timeout": {
       if (state.phase !== "running" || state.mode !== "endless") return state;
-      const lives = state.lives - 1;
+
+      // Flagged in the tape rather than left out of it. See the same branch
+      // in ChoiceRun, and the Answer type in lib/insights.
+      const lives = livesAfter(state.lives, "timeout");
       const next: RunState = {
         ...state,
         index: state.index + 1,
@@ -117,7 +122,10 @@ function reducer(state: RunState, action: Action): RunState {
         questionEndsAt: action.now + windowMs(state.index + 1),
         shownAt: action.now,
         feedback: { id: state.index, ok: false, chosen: -1 },
-        tape: [...state.tape, { id: state.index, ok: false, ms: windowMs(state.index) }],
+        tape: [
+          ...state.tape,
+          { id: state.index, ok: false, ms: windowMs(state.index), timedOut: true },
+        ],
       };
       return lives <= 0 ? { ...next, phase: "done" } : next;
     }
@@ -147,7 +155,7 @@ function reducer(state: RunState, action: Action): RunState {
       }
 
       const endless = state.mode === "endless";
-      const lives = endless && !ok ? state.lives - 1 : state.lives;
+      const lives = endless ? livesAfter(state.lives, ok ? "correct" : "wrong") : state.lives;
 
       const next: RunState = {
         ...state,

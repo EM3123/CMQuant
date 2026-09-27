@@ -23,6 +23,10 @@ export function RunInsights({
   if (!insights.length) return null;
 
   const correct = tape.filter((a) => a.ok).length;
+  // Counted separately because the median above is per ANSWER, and a window
+  // that closed is not one. Saying so is cheaper than leaving somebody to
+  // work out why the median does not divide the run.
+  const closed = tape.filter((a) => a.timedOut).length;
 
   return (
     <div className="w-full max-w-md border border-hairline">
@@ -32,6 +36,7 @@ export function RunInsights({
         </span>
         <span className="tabular text-[10px] text-muted">
           {medianSeconds(tape).toFixed(1)}s median · {correct}/{tape.length}
+          {closed > 0 && ` · ${closed} timed out`}
         </span>
       </div>
 

@@ -14,6 +14,7 @@ import { useChallenge, usePersonalBest } from "@/lib/browserState";
 import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
+import type { Answer } from "@/lib/insights";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -37,7 +38,7 @@ type RunState = {
   /** Bumped on every answer so the flash overlay remounts and replays. */
   feedback: { id: number; ok: boolean } | null;
   /** The tape. Every answer with how long it took, oldest first. */
-  tape: { id: number; ok: boolean; ms: number }[];
+  tape: Answer[];
   /** Sticky. One assisted answer marks the whole run, and it never unsets. */
   assisted: boolean;
 };

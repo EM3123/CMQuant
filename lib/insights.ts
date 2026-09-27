@@ -21,7 +21,22 @@ export type Answer = {
   id: number;
   ok: boolean;
   ms: number;
+  /**
+   * Endless only: the window closed before anything was chosen.
+   *
+   * These entries carry `ms` equal to the whole window, because that is how
+   * long the question was on screen - but nobody answered, so every finding
+   * whose sentence says "answer" has to leave them out. Counting a closed
+   * window as a very slow wrong answer manufactures exactly the gap the
+   * speed-against-accuracy finding exists to detect.
+   */
+  timedOut?: boolean;
 };
+
+/** The entries somebody actually answered. */
+function given(answers: Answer[]): Answer[] {
+  return answers.filter((a) => !a.timedOut);
+}
 
 export type Insight = {
   /** Stable key, so the UI can list findings without index keys. */
@@ -55,7 +70,11 @@ const seconds = (ms: number) => (ms / 1000).toFixed(1);
  * guessing at all - you were stuck, and the answer is to learn the pattern
  * rather than to grind it out.
  */
-function paceVersusAccuracy(answers: Answer[]): Insight | null {
+function paceVersusAccuracy(all: Answer[]): Insight | null {
+  // Timeouts excluded: every one of them lands at the full window, which is
+  // the slowest value possible, so a handful of them drags the "wrong" median
+  // up on their own and the run gets told it was grinding when it was idle.
+  const answers = given(all);
   const right = answers.filter((a) => a.ok).map((a) => a.ms);
   const wrong = answers.filter((a) => !a.ok).map((a) => a.ms);
   if (right.length < 3 || wrong.length < 3) return null;
@@ -133,13 +152,18 @@ function slowestAnswer(answers: Answer[]): Insight | null {
   const share = slowest.ms / total;
   if (share < 0.25) return null;
 
+  // A timeout stays in this one, because the window genuinely consumed that
+  // share of the run. What changes is the sentence: "you got it wrong" is not
+  // true of a question nobody answered.
+  const outcome = slowest.timedOut
+    ? "the window closed on it"
+    : `you got it ${slowest.ok ? "right" : "wrong"}`;
+
   return {
     key: "one-slow",
     tone: "neutral",
     headline: `One question ate ${Math.round(share * 100)}% of your run`,
-    detail: `Question ${slowest.id + 1} took ${seconds(slowest.ms)}s and you got it ${
-      slowest.ok ? "right" : "wrong"
-    }. On a clock, a question you cannot see a route into is worth abandoning - the next one is probably easier and worth the same.`,
+    detail: `Question ${slowest.id + 1} took ${seconds(slowest.ms)}s and ${outcome}. On a clock, a question you cannot see a route into is worth abandoning - the next one is probably easier and worth the same.`,
   };
 }
 
@@ -157,7 +181,9 @@ function slowestAnswer(answers: Answer[]): Insight | null {
 const BAND = 0.25;
 const WITHIN_BAND = 0.9;
 
-function consistency(answers: Answer[]): Insight | null {
+function consistency(all: Answer[]): Insight | null {
+  // Answers, not windows. The headline says "N of your M answers".
+  const answers = given(all);
   if (answers.length < 10) return null;
   const times = answers.map((a) => a.ms);
   const mid = median(times);
@@ -215,7 +241,8 @@ export function runInsights(
   return found.slice(0, 3);
 }
 
-/** Median seconds per answer, for the summary line above the findings. */
+/** Median seconds per answer, for the summary line above the findings.
+ *  Per ANSWER, so a closed window is not one of them. */
 export function medianSeconds(answers: Answer[]): number {
-  return median(answers.map((a) => a.ms)) / 1000;
+  return median(given(answers).map((a) => a.ms)) / 1000;
 }

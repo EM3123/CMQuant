@@ -7,7 +7,7 @@ import { AccountPanel } from "@/components/account/AccountPanel";
 
 export const metadata: Metadata = {
   title: "Account — CMQuant",
-  description: "Sign in to save your runs and appear on the leaderboards.",
+  description: "Sign in to save every finished run to your account.",
 };
 
 export default function AccountPage() {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
+import { todayKey, dailySeed, dailyGame, writeDailyResult } from "@/lib/daily";
 import { RunProgress } from "@/components/game/RunProgress";
 import { Wordmark } from "@/components/site/Wordmark";
 import { RunInsights } from "@/components/game/RunInsights";
@@ -89,12 +89,32 @@ export function ResultsCard({
   //
   // XP and feeding the dragon are recorded by RunProgress below, which also
   // has to show what the run earned.
+  //
+  // A boolean rather than the object prop, because `endless` is a fresh
+  // object on every render and would re-run this effect with it.
+  const isEndless = Boolean(endless);
   useEffect(() => {
     // An endless run is never the daily: the daily is the timed round, and an
     // endless score is a different quantity (lib/endless.ts).
-    if (assisted || endless) return;
+    if (assisted || isEndless) return;
+
+    // A run nobody answered is not a run either. Press start, walk away, and
+    // sixty seconds later this screen arrives with nothing on it - which
+    // without this writes a nought-point daily result that the
+    // first-result-of-the-day rule then makes permanent. `SaveRun` and
+    // `RunProgress` both require an answer; this is the third record
+    // agreeing with them about what counts as a run.
+    if (attempted < 1) return;
+
     const dayKey = todayKey();
     if (seed !== dailySeed(dayKey)) return;
+
+    // And it is one game as well as one seed. The seed is `daily-<date>`,
+    // which anyone can guess and paste onto any game's URL, so without this
+    // a Flash run records itself as the day the rotation picked Doomsday.
+    // `app/api/runs` checks both; the browser only checked the seed.
+    if (gameName !== dailyGame(dayKey).name) return;
+
     writeDailyResult({
       dayKey,
       game: gameName,
@@ -103,7 +123,7 @@ export function ResultsCard({
       attempted,
       bestStreak,
     });
-  }, [assisted, endless, seed, gameName, points, correct, attempted, bestStreak]);
+  }, [assisted, isEndless, seed, gameName, points, correct, attempted, bestStreak]);
 
   async function copyChallenge() {
     // An assisted run shares its seed but never its score. The seed is the
