@@ -192,6 +192,55 @@ stay inside, or it slides behind the page background and vanishes.
   on the root: two grids at different scales, the coarse one every thirteenth
   cell, because a 13 x 13 matrix is the shape every poker solver draws.
 
+## Two modes, two boards
+
+Every game on the shared runtime, plus Pot Odds, offers **60 seconds** and
+**Endless**. The toggle is on the intro screen and only there: a run that
+switched mode halfway through belongs on neither board. A challenge link pins
+you to timed, because the point of the link is that two people played the same
+thing.
+
+Endless is three lives and a window on each question, twelve seconds at the
+start closing to three and a half by question forty. A wrong answer or a
+closed window costs a life.
+
+**It has its own scoring, and that is not a style choice.** Everything in
+`lib/scoring.ts` assumes a sixty-second round - the accuracy multiplier lands
+once on a whole run, the streak milestones are tuned to how many questions fit
+in a minute, the wrong-answer penalty exists to stop mashing inside a fixed
+window. Reuse any of it and an endless score is a number that looks like a
+timed score and means something else. So endless keeps `lib/endless.ts`, its
+own storage key from `endlessKey()`, and a headline of DEPTH rather than
+points - points only break ties between two runs that died on the same
+question.
+
+If you add endless to a game, the four things to get right are: a separate
+storage key, `endlessScore` rather than the game's own `score`, a `timeout`
+action that costs a life, and a `mode` that can only be set at `start`.
+
+Flash and Memory Tiles do not have it yet.
+
+## Post-game insights
+
+`lib/insights.ts` turns a finished run into at most three findings, shown
+under the results card. It reads the tape - every answer with how long it took
+- and the mistake tally.
+
+Two rules if you add a finding:
+
+**It has to be arithmetic on data this run produced.** No benchmarks, no
+percentiles against other players. There is no server and nobody to compare
+against, so any such claim would be invented.
+
+**The check has to be the sentence it prints.** A consistency finding once
+used the median absolute deviation and announced "every answer landed within a
+quarter of 2.6s" about a run that alternated 2.6s and 0.25s - because when
+most times are identical, most deviations are zero. It now counts the answers
+that actually landed in the band, which is what the headline claims.
+
+Under six answers it says nothing. A confident sentence about how somebody
+plays, built on four data points, is worse than silence.
+
 ## Assist mode, for playtesting
 
 Playing a sixty-second run correctly to reach the results screen gets old on
