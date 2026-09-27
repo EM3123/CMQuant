@@ -58,15 +58,19 @@ export default function PokerPage() {
   return (
     <Wing wing="poker" scroll>
       <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-5 py-4">
-        <nav className="flex shrink-0 items-center justify-between border-b border-hairline-strong pb-2.5">
+        <nav className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong pb-2.5">
           <Wordmark />
-          <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
-            <span className="text-accent-ink">Poker Lab</span>
+          <div className="flex items-center gap-3 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-secondary sm:gap-5 sm:tracking-[0.18em]">
+            <span className="text-accent-ink max-sm:hidden">Poker Lab</span>
             <Link href="/daily" className="transition-colors hover:text-primary">
               Daily
             </Link>
             <Link href="/comp" className="transition-colors hover:text-primary">
               Comp
+            </Link>
+            <Link href="/firm" className="transition-colors hover:text-primary">
+              <span className="sm:hidden">Firm</span>
+              <span className="max-sm:hidden">My Firm</span>
             </Link>
             <AccountLink />
           </div>

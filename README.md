@@ -181,6 +181,12 @@ is the daily or a couple of runs, makes a fed day, and the pet's five stages
 the ladder. After two days unfed it looks hungry, but it never loses a stage.
 Its gold hoard grows with your level.
 
+`/firm` ("My Firm", in every nav) puts all of it on one page: rank and level
+with the XP to the next one and the next promotion, the XP rules, the career
+ladder, totals and day streaks, the last fourteen days of XP, every personal
+best, and the dragon. A player should never have to guess how the level
+system works.
+
 It is all stored per browser as a ledger of days (`lib/progressionStore.ts`).
 That can be rebuilt from the saved `runs` table, so it carries over when
 accounts go live. Days recorded by the pet before feeding existed still count.

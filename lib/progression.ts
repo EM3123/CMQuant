@@ -101,6 +101,52 @@ export function totalXp(ledger: Ledger): number {
   return total;
 }
 
+export function totalRuns(ledger: Ledger): number {
+  let total = 0;
+  for (const day of Object.values(ledger)) total += day.runs;
+  return total;
+}
+
+/** Days with at least one finished run, oldest first. */
+export function playedDays(ledger: Ledger): string[] {
+  return Object.keys(ledger)
+    .filter((day) => ledger[day].runs > 0)
+    .sort();
+}
+
+/**
+ * Consecutive days played, counting back from today. A streak is still alive
+ * until today is over, so if today has no run yet it counts back from
+ * yesterday instead - nobody should open the page at breakfast and be told
+ * their streak is zero.
+ */
+export function currentStreak(ledger: Ledger, today: string): number {
+  const played = new Set(playedDays(ledger));
+  let day = played.has(today) ? today : shiftDay(today, -1);
+  let streak = 0;
+  while (played.has(day)) {
+    streak++;
+    day = shiftDay(day, -1);
+  }
+  return streak;
+}
+
+export function longestStreak(ledger: Ledger): number {
+  const days = playedDays(ledger);
+  let best = 0;
+  let run = 0;
+  for (let i = 0; i < days.length; i++) {
+    run = i > 0 && daysBetween(days[i - 1], days[i]) === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+  }
+  return best;
+}
+
+/** The day `n` days after `day` (negative for before), as a UTC day key. */
+export function shiftDay(day: string, n: number): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Levels                                                                     */
 /* -------------------------------------------------------------------------- */

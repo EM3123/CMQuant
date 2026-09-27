@@ -78,17 +78,22 @@ const DRILLS = [
 export default function CompPage() {
   return (
     <Wing wing="comp">
-      <header className="flex shrink-0 items-center justify-between border-b border-hairline-strong px-3 py-2">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong px-3 py-2">
         <div className="flex items-baseline gap-4">
           <Wordmark />
-          <Label>Realm 1 / Quant Matrix</Label>
+          <Label className="max-sm:hidden">Realm 1 / Quant Matrix</Label>
         </div>
-        <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.18em] text-secondary">
+        <div className="flex items-center gap-3 whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-secondary sm:gap-5 sm:tracking-[0.18em]">
           <Link href="/daily" className="text-rare transition-colors hover:text-primary">
             Daily
           </Link>
           <Link href="/poker" className="transition-colors hover:text-primary">
-            Poker Lab
+            <span className="sm:hidden">Poker</span>
+            <span className="max-sm:hidden">Poker Lab</span>
+          </Link>
+          <Link href="/firm" className="transition-colors hover:text-primary">
+            <span className="sm:hidden">Firm</span>
+            <span className="max-sm:hidden">My Firm</span>
           </Link>
           <AccountLink />
         </div>
