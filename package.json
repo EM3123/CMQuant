@@ -28,6 +28,7 @@
     "verify:daily": "tsx scripts/verify-daily.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "motion": "^13.2.0",
     "next": "16.3.4",
     "react": "19.2.8",

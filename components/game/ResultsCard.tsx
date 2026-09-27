@@ -6,6 +6,7 @@ import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
 import { Wordmark } from "@/components/site/Wordmark";
 import { RunInsights } from "@/components/game/RunInsights";
 import type { Answer } from "@/lib/insights";
+import { SaveRun } from "@/components/account/SaveRun";
 
 /**
  * This is the marketing budget.
@@ -250,6 +251,17 @@ export function ResultsCard({
           Challenge a friend
         </button>
       </div>
+
+      <SaveRun
+        gameName={gameName}
+        seed={seed}
+        points={points}
+        correct={correct}
+        attempted={attempted}
+        bestStreak={bestStreak}
+        assisted={assisted}
+        endless={endless}
+      />
 
       {/* Both of these are deliberately outside the card. The card is the
           screenshot; these are the parts worth reading once, here, and never

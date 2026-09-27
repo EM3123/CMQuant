@@ -14,6 +14,7 @@ import {
   type DailyResult,
 } from "@/lib/daily";
 import { Wordmark } from "@/components/site/Wordmark";
+import { AccountLink } from "@/components/account/AccountLink";
 
 /**
  * One puzzle a day, one attempt, the same for everybody.
@@ -41,6 +42,7 @@ export default function DailyPage() {
           <Link href="/poker" className="transition-colors hover:text-primary">
             Poker Lab
           </Link>
+          <AccountLink />
         </div>
       </nav>
 
