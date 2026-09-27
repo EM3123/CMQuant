@@ -203,6 +203,7 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        tape={run.tape}
         assisted={run.assisted}
         onReplay={start}
       />

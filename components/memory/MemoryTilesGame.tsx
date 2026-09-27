@@ -49,6 +49,8 @@ type RunState = {
   /** Sticky. One assisted answer marks the whole run, and it never unsets. */
   assisted: boolean;
   feedback: { id: number; ok: boolean } | null;
+  /** The tape. Every answer with how long it took, oldest first. */
+  tape: { id: number; ok: boolean; ms: number }[];
 };
 
 const EMPTY: RunState = {
@@ -65,6 +67,7 @@ const EMPTY: RunState = {
   endsAt: 0,
   recallFrom: 0,
   feedback: null,
+  tape: [],
   assisted: false,
 };
 
@@ -94,6 +97,7 @@ function advance(state: RunState, ok: boolean, now: number): RunState {
         ? score(question, now - state.recallFrom, state.streak) + streakMilestoneBonus(streak)
         : WRONG_POINTS),
     endsAt,
+    tape: [...state.tape, { id: state.index, ok, ms: now - state.recallFrom }],
     feedback: { id: state.index, ok },
   };
 
@@ -213,6 +217,7 @@ export function MemoryTilesGame() {
         personalBest={best}
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
+        tape={run.tape}
         assisted={run.assisted}
         onReplay={start}
       />

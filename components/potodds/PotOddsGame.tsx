@@ -226,6 +226,7 @@ export function PotOddsGame() {
         isPersonalBest={runPoints >= best && runPoints > 0}
         challengeTarget={challenge?.target ?? 0}
         mistakes={run.mistakes}
+        tape={run.tape}
         assisted={run.assisted}
         onReplay={start}
       />

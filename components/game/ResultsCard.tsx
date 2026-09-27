@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
 import { Wordmark } from "@/components/site/Wordmark";
+import { RunInsights } from "@/components/game/RunInsights";
+import type { Answer } from "@/lib/insights";
 
 /**
  * This is the marketing budget.
@@ -34,6 +36,7 @@ export function ResultsCard({
   isPersonalBest,
   challengeTarget,
   mistakes,
+  tape = [],
   assisted = false,
   onReplay,
 }: {
@@ -54,6 +57,11 @@ export function ResultsCard({
   challengeTarget: number;
   /** Named errors from this run, if the game can name them. */
   mistakes?: Record<string, { label: string; fix: string; count: number }>;
+  /**
+   * Every answer with how long it took. Feeds the post-game analysis, which
+   * renders nothing when the run was too short to say anything about.
+   */
+  tape?: Answer[];
   /**
    * Assist mode was on for at least one answer. The run is shown but does not
    * count anywhere: no daily result, no score on the shared link, and the card
@@ -225,8 +233,10 @@ export function ResultsCard({
         </button>
       </div>
 
-      {/* Deliberately outside the card. The card is the screenshot; this is
-          the part that is worth reading once, here, and never again. */}
+      {/* Both of these are deliberately outside the card. The card is the
+          screenshot; these are the parts worth reading once, here, and never
+          again. */}
+      <RunInsights tape={tape} mistakes={mistakes} />
       <MistakeReview mistakes={mistakes} />
 
       <p className="max-w-xs text-center text-[11px] text-muted">
