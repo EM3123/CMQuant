@@ -19,9 +19,9 @@ overrides every pattern below:
 
 > **Nothing animates between a question and the next question.**
 
-The round loop is the product. `--dur-feedback` is 90ms, the wrong-answer flash
-is a CSS keyframe, and the gap between answering and seeing the next question
-has to stay at zero. A spring on a question card would be an animation the
+The round loop is the product. The right/wrong flash is a CSS keyframe on
+`--dur-flash` that never blocks input, and the gap between answering and
+seeing the next question has to stay at zero. A spring on a question card would be an animation the
 player is waiting on, and waiting is the one cost this product cannot pay.
 
 So Motion belongs on the surfaces around the game, never inside it:
