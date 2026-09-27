@@ -141,7 +141,7 @@
   --tracking-wing-raw: 0.02em;
 
   /* The right/wrong wash lands on the answer frame, holds, then fades. */
-  --dur-flash: 380ms;
+  --dur-flash: 650ms;
   --dur-ui: 160ms;
   --ease-wing: cubic-bezier(0.2, 0, 0, 1);
 
@@ -374,7 +374,7 @@ body {
    -------------------------------------------------------------------------- */
 @keyframes wing-flash {
   0%,
-  30% {
+  40% {
     opacity: 1;
   }
   100% {
