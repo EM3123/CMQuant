@@ -46,10 +46,10 @@ const TABLES = [
   {
     code: "EQY",
     name: "Equity",
-    line: "Run the hand out against a range",
-    href: null,
-    storageKey: null,
-    status: "PHASE 2",
+    line: "Both hands face up, one card to come - how often do you win?",
+    href: "/g/equity",
+    storageKey: "cmquant:equity:best",
+    status: "OPEN",
   },
 ];
 

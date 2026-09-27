@@ -23,6 +23,8 @@ import { ChipPile } from "@/components/poker/Chips";
 export function Felt({
   board,
   hero,
+  villain,
+  villainLabel = "They have",
   pot,
   bet,
   betLabel = "They bet",
@@ -32,6 +34,13 @@ export function Felt({
   board: CardCode[];
   /** The two cards in front of you. */
   hero?: CardCode[];
+  /**
+   * The opponent's cards, face up across the table. Only Equity shows these -
+   * the other games are questions about what somebody COULD have, and turning
+   * their hand over would answer a different question than the one asked.
+   */
+  villain?: CardCode[];
+  villainLabel?: string;
   /** Chips in the middle. Omitted when the game is not about money. */
   pot?: number;
   /** What is in front of the villain, if anything. */
@@ -67,6 +76,24 @@ export function Felt({
           />
 
           <div className="relative flex flex-col items-center gap-3">
+            {villain && villain.length > 0 && (
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[9px] uppercase tracking-[0.3em] text-white/40">
+                  {villainLabel}
+                </span>
+                <div className="flex items-end gap-1">
+                  {villain.map((code, i) => (
+                    <PlayingCard
+                      key={`v-${code}-${i}`}
+                      code={code}
+                      size="sm"
+                      rotate={i === 0 ? 5 : -5}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {typeof pot === "number" && (
               <div className="flex flex-col items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-[0.3em] text-white/40">
