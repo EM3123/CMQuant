@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { todayKey, dailySeed, writeDailyResult } from "@/lib/daily";
-import { recordPlay } from "@/lib/pet";
+import { RunProgress } from "@/components/game/RunProgress";
 import { Wordmark } from "@/components/site/Wordmark";
 import { RunInsights } from "@/components/game/RunInsights";
 import type { Answer } from "@/lib/insights";
@@ -86,16 +86,14 @@ export function ResultsCard({
   // Every game ends here, so this is the one place that has to know a run
   // finished. If the seed is today's daily seed, the result is recorded - and
   // only the first result of the day is kept.
+  //
+  // XP and feeding the dragon are recorded by RunProgress below, which also
+  // has to show what the run earned.
   useEffect(() => {
-    if (assisted) return;
+    // An endless run is never the daily: the daily is the timed round, and an
+    // endless score is a different quantity (lib/endless.ts).
+    if (assisted || endless) return;
     const dayKey = todayKey();
-
-    // The pet counts distinct days a run was FINISHED, on any game, daily or
-    // not. Idempotent within a day, so six runs on a Tuesday is one Tuesday -
-    // which is the entire mechanic. An assisted run does not feed it either;
-    // a cheat that grows the pet is a pet that means nothing.
-    recordPlay(dayKey);
-
     if (seed !== dailySeed(dayKey)) return;
     writeDailyResult({
       dayKey,
@@ -105,7 +103,7 @@ export function ResultsCard({
       attempted,
       bestStreak,
     });
-  }, [assisted, seed, gameName, points, correct, attempted, bestStreak]);
+  }, [assisted, endless, seed, gameName, points, correct, attempted, bestStreak]);
 
   async function copyChallenge() {
     // An assisted run shares its seed but never its score. The seed is the
@@ -259,6 +257,15 @@ export function ResultsCard({
           Challenge a friend
         </button>
       </div>
+
+      <RunProgress
+        gameName={gameName}
+        seed={seed}
+        correct={correct}
+        attempted={attempted}
+        assisted={assisted}
+        endless={Boolean(endless)}
+      />
 
       <SaveRun
         gameName={gameName}

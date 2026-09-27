@@ -141,7 +141,7 @@
   --tracking-wing-raw: 0.02em;
 
   /* The right/wrong wash lands on the answer frame, holds, then fades. */
-  --dur-flash: 650ms;
+  --dur-flash: 500ms;
   --dur-ui: 160ms;
   --ease-wing: cubic-bezier(0.2, 0, 0, 1);
 
@@ -374,7 +374,7 @@ body {
    -------------------------------------------------------------------------- */
 @keyframes wing-flash {
   0%,
-  40% {
+  35% {
     opacity: 1;
   }
   100% {
@@ -431,6 +431,29 @@ body {
 
 @utility pet-scan {
   animation: pet-scan 2.8s linear infinite;
+}
+
+/* Level up, on the results screen - the run is over, so this is allowed to
+   move. A keyframe rather than Motion because it has fixed timing and no
+   interaction, and `both` means the reduced-motion clamp lands it on its
+   final frame instead of leaving it invisible. */
+@keyframes level-up {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility level-up {
+  animation: level-up 420ms var(--ease-wing) both;
 }
 
 @utility rise-away {

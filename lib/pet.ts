@@ -1,7 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { todayKey } from "@/lib/daily";
+import { useProgression } from "@/lib/progressionStore";
 
 /**
  * The dragon that grows because you came back.
@@ -15,23 +14,26 @@ import { todayKey } from "@/lib/daily";
  * at all once their bests stop improving. A pet fed on peak score gets fat and
  * then starves while you are still feeding it.
  *
- * So it counts DISTINCT DAYS YOU FINISHED A RUN. That is the sentence "it
- * grows the more times you come to play", written as arithmetic. Distinct
- * days rather than runs, because runs can be farmed in one sitting and the
- * whole point is returning; finished rather than visited, because loading a
- * page is not playing.
+ * So it counts DISTINCT DAYS. That is the sentence "it grows the more times
+ * you come to play", written as arithmetic. Distinct days rather than runs,
+ * because runs can be farmed in one sitting and the whole point is returning.
+ *
+ * Since XP landed, a day counts once the dragon is FED that day: 100 XP, which
+ * is the daily challenge or a couple of runs (lib/progression.ts). XP feeds
+ * it; days grow it. Grinding one afternoon fills one day's bowl, not the
+ * ladder.
  *
  * Scores are still shown next to it. They are just not what feeds it.
  *
  * WHERE IT LIVES. In this browser, like every other record here, until
- * accounts land. The stored shape is a list of day keys, which is the same
- * thing the server will hold later - so moving it is a copy, not a migration.
+ * accounts land - as the XP ledger, one entry per day, which the server can
+ * rebuild from its saved runs.
  */
 
 export type Stage = {
   level: number;
   name: string;
-  /** Days needed to reach this stage. */
+  /** Fed days needed to reach this stage. */
   at: number;
   /** A role token, never a hex. The pet has to read correctly in both wings. */
   tone: string;
@@ -50,35 +52,35 @@ export const STAGES: Stage[] = [
     name: "The Seed",
     at: 1,
     tone: "var(--text-secondary)",
-    note: "You played. That is the whole requirement.",
+    note: "Fed once. That is the whole requirement.",
   },
   {
     level: 2,
     name: "The Script",
     at: 3,
     tone: "var(--accent-ink)",
-    note: "Three separate days.",
+    note: "Fed on three separate days.",
   },
   {
     level: 3,
     name: "The Algorithm",
     at: 7,
     tone: "var(--text-primary)",
-    note: "A week of days, not a week of runs.",
+    note: "A week of fed days, not a week of runs.",
   },
   {
     level: 4,
     name: "The Engine",
     at: 21,
     tone: "var(--color-data-pos)",
-    note: "Twenty-one days. This is where it stops being a streak and starts being a habit.",
+    note: "Twenty-one fed days. This is where it stops being a streak and starts being a habit.",
   },
   {
     level: 5,
     name: "The Runtime",
     at: 60,
     tone: "var(--color-gold-leaf)",
-    note: "Sixty days. The dragon is finished; you are not.",
+    note: "Sixty fed days. The dragon is finished; you are not.",
   },
 ];
 
@@ -130,57 +132,14 @@ export function progressFor(days: number): Progress {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Storage                                                                    */
+/* Days it has grown on                                                       */
 /* -------------------------------------------------------------------------- */
 
-const KEY = "cmquant:pet:days";
-
-let cache: string[] | null = null;
-const listeners = new Set<() => void>();
-
-function read(): string[] {
-  if (cache) return cache;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    cache = Array.isArray(parsed) ? parsed.filter((d): d is string => typeof d === "string") : [];
-  } catch {
-    // Private mode, or somebody put something else under the key. A pet that
-    // cannot be read is a pet at level one, not a crash on the results screen.
-    cache = [];
-  }
-  return cache;
-}
-
 /**
- * Record that a run was finished today. Idempotent within a day, which is the
- * entire mechanic - playing six times on a Tuesday is one Tuesday.
+ * Fed days, from the XP ledger, plus every day recorded before feeding
+ * existed. The old list of played days is kept and still counted, so nobody's
+ * dragon shrank the day this changed. lib/progressionStore.ts holds both.
  */
-export function recordPlay(dayKey: string = todayKey()): void {
-  const days = read();
-  if (days.includes(dayKey)) return;
-
-  cache = [...days, dayKey];
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(cache));
-  } catch {
-    // The count is still right for this session.
-  }
-  for (const listener of listeners) listener();
-}
-
-function subscribe(onChange: () => void) {
-  listeners.add(onChange);
-  return () => {
-    listeners.delete(onChange);
-  };
-}
-
-/** Days played, as an external store. Server-renders as zero. */
 export function useDaysPlayed(): number {
-  return useSyncExternalStore(
-    subscribe,
-    () => read().length,
-    () => 0
-  );
+  return useProgression().growthDays;
 }

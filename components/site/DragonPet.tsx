@@ -2,6 +2,16 @@
 
 import { useId } from "react";
 import { useDaysPlayed, progressFor, MAX_LEVEL, STAGES } from "@/lib/pet";
+import { todayKey } from "@/lib/daily";
+import {
+  FEED_TARGET,
+  levelFor,
+  moodFor,
+  rankFor,
+  totalXp,
+  type Mood,
+} from "@/lib/progression";
+import { useProgression } from "@/lib/progressionStore";
 import { DRAGON_PATH } from "@/components/site/DragonMark";
 
 /**
@@ -39,9 +49,21 @@ function shapeFor(level: number): string {
   return DRAGON_PATH;
 }
 
+const MOOD_LABEL: Record<Mood, string> = {
+  fed: "Fed today",
+  peckish: "Peckish",
+  hungry: "Hungry",
+};
+
 export function DragonPet({ size = 132 }: { size?: number }) {
   const days = useDaysPlayed();
   const { stage, next, remaining, fraction } = progressFor(days);
+  const { ledger } = useProgression();
+  const today = todayKey();
+  const todayXp = ledger[today]?.xp ?? 0;
+  const mood = moodFor(ledger, today);
+  const level = levelFor(totalXp(ledger));
+  const rank = rankFor(level.level);
   const id = useId();
   const clipId = `pet-clip-${id}`;
 
@@ -52,8 +74,9 @@ export function DragonPet({ size = 132 }: { size?: number }) {
   return (
     <div className="flex w-full max-w-xs flex-col items-center">
       <div
-        className="relative flex items-center justify-center"
-        style={{ width: size, height: size, color: stage.tone }}
+        className="relative flex items-center justify-center transition-opacity duration-500"
+        // Hunger is only ever a look. It dims; it never costs a stage.
+        style={{ width: size, height: size, color: stage.tone, opacity: mood === "hungry" ? 0.55 : 1 }}
       >
         <svg viewBox="0 0 64 64" width={size} height={size} role="img"
              aria-label={`${stage.name}, level ${stage.level} of ${MAX_LEVEL}`}>
@@ -88,6 +111,8 @@ export function DragonPet({ size = 132 }: { size?: number }) {
         </svg>
       </div>
 
+      <Hoard coins={level.level - 1} />
+
       <div className="mt-5 w-full">
         <div className="flex items-baseline justify-between">
           <span className="text-[11px] uppercase tracking-[0.18em] text-primary">
@@ -106,10 +131,47 @@ export function DragonPet({ size = 132 }: { size?: number }) {
         </div>
 
         <p className="tabular mt-2 text-[10px] text-secondary">
-          {days} {days === 1 ? "day" : "days"} played
+          {days} fed {days === 1 ? "day" : "days"}
           {next ? ` · ${remaining} more to ${next.name}` : " · fully grown"}
         </p>
         <p className="mt-2 text-[10px] leading-relaxed text-muted">{stage.note}</p>
+
+        {/* Today's bowl. XP feeds it; a fed day is what it grows on. */}
+        <div className="mt-5 flex items-baseline justify-between">
+          <span
+            className={`text-[10px] uppercase tracking-[0.18em] ${
+              mood === "fed" ? "text-data-pos" : mood === "hungry" ? "text-data-neg" : "text-secondary"
+            }`}
+          >
+            {MOOD_LABEL[mood]}
+          </span>
+          <span className="tabular text-[10px] text-muted">
+            {Math.min(todayXp, FEED_TARGET)}/{FEED_TARGET} XP today
+          </span>
+        </div>
+        <div className="mt-2 h-px w-full bg-hairline">
+          <div
+            className="h-px bg-data-pos transition-[width] duration-500"
+            style={{ width: `${Math.round(Math.min(1, todayXp / FEED_TARGET) * 100)}%` }}
+          />
+        </div>
+
+        {/* You, rather than the dragon: level and rank from all-time XP. */}
+        <div className="mt-5 flex items-baseline justify-between">
+          <span className="text-[11px] uppercase tracking-[0.18em]" style={{ color: rank.tone }}>
+            {rank.name}
+          </span>
+          <span className="tabular text-[10px] text-muted">lvl {level.level}</span>
+        </div>
+        <div className="mt-2 h-px w-full bg-hairline">
+          <div
+            className="h-px transition-[width] duration-500"
+            style={{ width: `${Math.round(level.fraction * 100)}%`, backgroundColor: rank.tone }}
+          />
+        </div>
+        <p className="tabular mt-2 text-[10px] text-secondary">
+          {level.into}/{level.needed} XP to level {level.level + 1}
+        </p>
       </div>
     </div>
   );
@@ -134,11 +196,45 @@ export function PetLadder() {
             <span
               className={`tabular text-[10px] ${reached ? "text-data-pos" : "text-muted"}`}
             >
-              {s.at} {s.at === 1 ? "day" : "days"}
+              {s.at} fed {s.at === 1 ? "day" : "days"}
             </span>
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * The hoard: one coin per level past the first, piled into a pyramid under
+ * the dragon, up to a full pile of twenty-one. It is the one thing on the pet
+ * that grows with XP rather than with days.
+ */
+function Hoard({ coins }: { coins: number }) {
+  const n = Math.max(0, Math.min(21, coins));
+  if (n === 0) return null;
+
+  // Fill a pyramid bottom-up: rows of 6, 5, 4, 3, 2, 1.
+  const positions: { x: number; y: number }[] = [];
+  for (let row = 0, width = 6; width > 0 && positions.length < n; row++, width--) {
+    for (let i = 0; i < width && positions.length < n; i++) {
+      positions.push({ x: 8 + row * 4 + i * 8, y: 22 - row * 3.5 });
+    }
+  }
+
+  return (
+    <svg
+      viewBox="0 0 64 26"
+      width={96}
+      height={39}
+      className="-mt-3"
+      role="img"
+      aria-label={`A hoard of ${n} ${n === 1 ? "coin" : "coins"}`}
+      style={{ color: "var(--color-gold-leaf)" }}
+    >
+      {positions.map((p, i) => (
+        <ellipse key={i} cx={p.x} cy={p.y} rx={3.6} ry={1.8} fill="currentColor" opacity={0.85} />
+      ))}
+    </svg>
   );
 }

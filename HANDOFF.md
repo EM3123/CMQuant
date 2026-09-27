@@ -190,10 +190,10 @@ repo root (git ignores it), then `npm run dev`.
 2. **Leaderboard pages.** Daily (today's `day_key`, best score per player)
    and all-time (best per game, per mode). They should show only
    `verified = true` runs.
-3. **Small bug in `main`'s code:** the in-browser daily record in
-   `components/game/ResultsCard.tsx` doesn't skip Endless runs. An Endless
-   run started from the daily link gets saved in `localStorage` as that
-   day's daily. (The database already refuses it as a daily.)
+3. **Carry XP over to accounts.** XP, levels and the dragon (README, "XP,
+   levels and the dragon") are stored per browser. Once runs are
+   server-checked, rebuild each player's ledger from their `runs` rows, so
+   it follows them between devices.
 
 Checks to run before every push (`main` deploys straight to production):
 
