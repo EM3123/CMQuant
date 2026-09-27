@@ -167,6 +167,24 @@ storage and replay. Signed in, the database allows one daily run per player per
 day. Scores are still reported by the browser; before they rank anything,
 validation has to move to the server (see Accounts below).
 
+## XP, levels and the dragon
+
+Every finished, unassisted run earns XP: 10 for finishing, 1 per correct
+answer (up to 100), 50 for the first run of the day and 50 for the daily.
+Past the tenth run in a day, runs pay half. XP sets your level, and every few
+levels a rank title, from Intern to Partner. The rules and the curve are in
+`lib/progression.ts`, and `npm run verify:progression` pins all of them.
+
+The dragon on `/daily` is fed by XP and grows on days. 100 XP in a day, which
+is the daily or a couple of runs, makes a fed day, and the pet's five stages
+(`lib/pet.ts`) count fed days. Grinding one afternoon fills one day's bowl, not
+the ladder. After two days unfed it looks hungry, but it never loses a stage.
+Its gold hoard grows with your level.
+
+It is all stored per browser as a ledger of days (`lib/progressionStore.ts`).
+That can be rebuilt from the saved `runs` table, so it carries over when
+accounts go live. Days recorded by the pet before feeding existed still count.
+
 ## Poker
 
 `lib/poker/hand.ts` categorises a hand. It deliberately does **not** compare two

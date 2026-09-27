@@ -137,7 +137,7 @@ export default function DailyPage() {
           <div className="flex items-baseline justify-between border-b border-hairline px-4 py-2">
             <Label>Your dragon</Label>
             <span className="text-[10px] uppercase tracking-[0.18em] text-muted">
-              Grows on days played
+              Fed by XP · grows on fed days
             </span>
           </div>
           <div className="grid gap-8 px-5 py-6 sm:grid-cols-[auto_1fr] sm:items-center">
@@ -148,8 +148,9 @@ export default function DailyPage() {
 
         <p className="mt-4 text-center text-[10px] leading-relaxed text-muted">
           One puzzle a day, one attempt, the same questions for everyone. The
-          day turns over at midnight UTC. The dragon counts days you finished a
-          run on any game, not runs and not score.
+          day turns over at midnight UTC. Every finished run earns XP; 100 XP
+          in a day feeds the dragon, and it grows on the days it is fed, not
+          on runs and not on score.
         </p>
       </div>
 
