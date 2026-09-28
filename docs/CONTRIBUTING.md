@@ -214,11 +214,24 @@ own storage key from `endlessKey()`, and a headline of DEPTH rather than
 points - points only break ties between two runs that died on the same
 question.
 
-If you add endless to a game, the four things to get right are: a separate
-storage key, `endlessScore` rather than the game's own `score`, a `timeout`
-action that costs a life, and a `mode` that can only be set at `start`.
+**Every game has both modes now.** The five on `ChoiceRun` get it from the
+runtime; Equalize, Flash, Memory Tiles and Pot Odds each own their reducer
+and wire it themselves.
 
-Flash and Memory Tiles do not have it yet.
+If you add another game, the five things to get right are: a separate storage
+key from `endlessKey()`, `endlessScore` rather than the game's own `score`, a
+`timeout` action that costs a life, a `mode` that can only be set at `start`,
+and a timed-mode clock penalty that does not fire in endless - there is no
+round clock to take seconds off, so a miss costs a life instead of two
+seconds, and subtracting from `Number.MAX_SAFE_INTEGER` is a silent no-op
+that looks like it works.
+
+**Memory Tiles is the one with a wrinkle worth copying.** It has a show phase
+before the recall, so its window opens on `reveal` rather than when the
+question starts, and `questionEndsAt` is zero until then. A window that ran
+during the reveal would take lives off a player who had not been allowed to
+touch anything yet - the same reason `recallFrom` exists for scoring. The
+clock on screen shows the full window, frozen, while the pattern is up.
 
 **The daily is timed, on one game.** `ResultsCard` records a daily result
 only when the finished run is today's seed AND today's game AND not endless -

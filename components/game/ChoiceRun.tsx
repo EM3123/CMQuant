@@ -382,7 +382,7 @@ export function ChoiceRun<Q>({ game }: { game: ChoiceGame<Q> }) {
 
   if (run.phase === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center [justify-content:safe_center] overflow-y-auto px-6 py-12 text-center">
         {game.intro.ornament}
         <span className="text-[10px] uppercase tracking-[0.18em] text-secondary">
           {game.intro.eyebrow}

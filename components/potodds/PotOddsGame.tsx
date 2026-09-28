@@ -327,7 +327,7 @@ export function PotOddsGame() {
 
   if (run.phase === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center [justify-content:safe_center] overflow-y-auto px-6 py-12 text-center">
         <div>
           <CardFan cards={["As", "Kd", null, null]} size="md" className="justify-center" />
         </div>

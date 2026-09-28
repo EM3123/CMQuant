@@ -15,6 +15,16 @@ import { useAssist } from "@/lib/assist";
 import { ResultsCard } from "@/components/game/ResultsCard";
 import { Rail, Tape } from "@/components/game/Rail";
 import type { Answer } from "@/lib/insights";
+import type { RunMode } from "@/components/game/ChoiceRun";
+import {
+  LIVES,
+  livesAfter,
+  windowMs,
+  endlessScore,
+  endlessKey,
+  endlessRecord,
+  unpackRecord,
+} from "@/lib/endless";
 import {
   WRONG_POINTS,
   streakMilestoneBonus,
@@ -26,6 +36,8 @@ type Phase = "idle" | "running" | "done";
 
 type RunState = {
   phase: Phase;
+  /** Fixed at start. A run that changed mode belongs on neither board. */
+  mode: RunMode;
   seed: string;
   index: number;
   correct: number;
@@ -34,6 +46,11 @@ type RunState = {
   bestStreak: number;
   points: number;
   endsAt: number;
+  /** Endless only. Lives left, and the deadline on the pair in front of you. */
+  lives: number;
+  questionEndsAt: number;
+  /** Endless only. Comparisons called correctly - the headline number. */
+  cleared: number;
   shownAt: number;
   /** Bumped on every answer so the flash overlay remounts and replays. */
   feedback: { id: number; ok: boolean } | null;
@@ -45,6 +62,7 @@ type RunState = {
 
 const EMPTY: RunState = {
   phase: "idle",
+  mode: "timed",
   seed: "",
   index: 0,
   correct: 0,
@@ -53,6 +71,9 @@ const EMPTY: RunState = {
   bestStreak: 0,
   points: 0,
   endsAt: 0,
+  lives: LIVES,
+  questionEndsAt: 0,
+  cleared: 0,
   shownAt: 0,
   feedback: null,
   tape: [],
@@ -60,8 +81,10 @@ const EMPTY: RunState = {
 };
 
 type Action =
-  | { type: "start"; seed: string; now: number }
+  | { type: "start"; seed: string; now: number; mode: RunMode }
   | { type: "answer"; side: Side; now: number; assist: boolean }
+  /** Endless only. The window on the current pair closed. */
+  | { type: "timeout"; now: number }
   | { type: "finish" };
 
 function reducer(state: RunState, action: Action): RunState {
@@ -70,10 +93,39 @@ function reducer(state: RunState, action: Action): RunState {
       return {
         ...EMPTY,
         phase: "running",
+        mode: action.mode,
         seed: action.seed,
-        endsAt: action.now + ROUND_MS,
+        // Timed runs get a round clock. Endless runs get a per-question one
+        // and a deadline past the end of time, so nothing below has to branch
+        // on the mode just to read one.
+        endsAt:
+          action.mode === "timed" ? action.now + ROUND_MS : Number.MAX_SAFE_INTEGER,
+        questionEndsAt: action.now + windowMs(0),
         shownAt: action.now,
       };
+
+    case "timeout": {
+      if (state.phase !== "running" || state.mode !== "endless") return state;
+
+      // Flagged in the tape rather than left out of it. See the same branch
+      // in ChoiceRun, and the Answer type in lib/insights.
+      const lives = livesAfter(state.lives, "timeout");
+      const next: RunState = {
+        ...state,
+        index: state.index + 1,
+        attempted: state.attempted + 1,
+        lives,
+        streak: 0,
+        questionEndsAt: action.now + windowMs(state.index + 1),
+        shownAt: action.now,
+        feedback: { id: state.index, ok: false },
+        tape: [
+          ...state.tape,
+          { id: state.index, ok: false, ms: windowMs(state.index), timedOut: true },
+        ],
+      };
+      return lives <= 0 ? { ...next, phase: "done" } : next;
+    }
 
     case "answer": {
       if (state.phase !== "running") return state;
@@ -87,25 +139,39 @@ function reducer(state: RunState, action: Action): RunState {
       const endsAt = ok ? state.endsAt : state.endsAt - WRONG_PENALTY_MS;
       const streak = ok ? state.streak + 1 : 0;
 
+      const endless = state.mode === "endless";
+      const lives = endless ? livesAfter(state.lives, ok ? "correct" : "wrong") : state.lives;
+
       const next: RunState = {
         ...state,
         assisted: state.assisted || action.assist,
         index: state.index + 1,
         attempted: state.attempted + 1,
         correct: state.correct + (ok ? 1 : 0),
+        cleared: state.cleared + (ok ? 1 : 0),
+        lives,
         streak,
         bestStreak: Math.max(state.bestStreak, streak),
+        // Endless scores by its own rules. Reusing the timed economy would
+        // produce a number that sorts next to a timed score and means
+        // something else - see lib/endless.ts.
         points:
           state.points +
-          (ok
-            ? score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
-            : WRONG_POINTS),
+          (endless
+            ? ok
+              ? endlessScore(state.index, question.difficulty, elapsed)
+              : 0
+            : ok
+              ? score(question, elapsed, state.streak) + streakMilestoneBonus(streak)
+              : WRONG_POINTS),
         endsAt,
+        questionEndsAt: action.now + windowMs(state.index + 1),
         shownAt: action.now,
         feedback: { id: state.index, ok },
         tape: [...state.tape, { id: state.index, ok, ms: elapsed }],
       };
 
+      if (endless) return lives <= 0 ? { ...next, phase: "done" } : next;
       return endsAt <= action.now ? { ...next, phase: "done" } : next;
     }
 
@@ -120,17 +186,24 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
   const challenge = useChallenge();
   const assist = useAssist();
   const [best, recordBest] = usePersonalBest("cmquant:equalize:best");
+  // A separate store. An endless record and a timed score are different
+  // quantities and must never sort against each other.
+  const [endlessBest, recordEndless] = usePersonalBest(endlessKey("cmquant:equalize:best"));
+  const [mode, setMode] = useState<RunMode>("timed");
+  const endless = run.mode === "endless";
 
   // The accuracy multiplier lands once, on the whole run, and the personal best
   // records what the player actually finished with. Computed here rather than
   // beside the results screen so the persist effect below can see it.
   const runMultiplier = accuracyMultiplier(run.correct, run.attempted);
-  const runPoints = finalScore(run.points, run.correct, run.attempted);
+  const runPoints = endless
+    ? run.points
+    : finalScore(run.points, run.correct, run.attempted);
 
   const start = useCallback(() => {
-    dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now() });
+    dispatch({ type: "start", seed: challenge?.seed ?? makeSeed(), now: Date.now(), mode });
     setNow(Date.now());
-  }, [challenge]);
+  }, [challenge, mode]);
 
   const answer = useCallback(
     (side: Side) => {
@@ -145,17 +218,34 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
     const id = window.setInterval(() => {
       const t = Date.now();
       setNow(t);
-      if (t >= run.endsAt) dispatch({ type: "finish" });
+      // Endless has no round clock - endsAt is set past the end of time - so
+      // the deadline that matters is the one on the pair in front of you.
+      if (run.mode === "endless") {
+        if (t >= run.questionEndsAt) dispatch({ type: "timeout", now: t });
+      } else if (t >= run.endsAt) {
+        dispatch({ type: "finish" });
+      }
     }, 100);
     return () => window.clearInterval(id);
-  }, [run.phase, run.endsAt]);
+  }, [run.phase, run.mode, run.endsAt, run.questionEndsAt]);
 
   // Persist the personal best once the round closes. This writes to an external
   // store rather than setting state, so the re-render comes from the store's
   // own subscription instead of a cascading update.
   useEffect(() => {
-    if (run.phase === "done" && !run.assisted) recordBest(runPoints);
-  }, [run.phase, run.assisted, runPoints, recordBest]);
+    if (run.phase !== "done" || run.assisted) return;
+    if (run.mode === "endless") recordEndless(endlessRecord(run.cleared, run.points));
+    else recordBest(runPoints);
+  }, [
+    run.phase,
+    run.assisted,
+    run.mode,
+    run.cleared,
+    run.points,
+    runPoints,
+    recordBest,
+    recordEndless,
+  ]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -201,9 +291,14 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
         correct={run.correct}
         attempted={run.attempted}
         bestStreak={run.bestStreak}
-        personalBest={best}
-        isPersonalBest={runPoints >= best && runPoints > 0}
-        challengeTarget={challenge?.target ?? 0}
+        personalBest={endless ? unpackRecord(endlessBest).cleared : best}
+        isPersonalBest={
+          endless
+            ? endlessRecord(run.cleared, run.points) >= endlessBest && run.cleared > 0
+            : runPoints >= best && runPoints > 0
+        }
+        challengeTarget={endless ? 0 : challenge?.target ?? 0}
+        endless={endless ? { cleared: run.cleared, lives: run.lives } : undefined}
         tape={run.tape}
         assisted={run.assisted}
         onReplay={start}
@@ -213,7 +308,7 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
 
   if (run.phase === "idle") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center [justify-content:safe_center] overflow-y-auto px-6 text-center">
         <span className="text-secondary text-[10px] uppercase tracking-[0.18em]">
           Comp / Computational Thinking
         </span>
@@ -244,15 +339,47 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
           </div>
         )}
 
+        {/* Mode is chosen before the run, never during it - a run that
+            switched halfway belongs on neither board. A challenge link pins
+            you to timed, because the whole point of the link is that two
+            people played the same thing. */}
+        {!challenge && (
+          <div className="mt-9 flex border border-hairline">
+            {(["timed", "endless"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                aria-pressed={mode === m}
+                className={`px-5 py-2 text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                  mode === m
+                    ? "bg-accent/15 text-accent-ink"
+                    : "text-secondary hover:text-primary"
+                }`}
+              >
+                {m === "timed" ? "60 seconds" : "Endless"}
+              </button>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={start}
-          className="mt-10 border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
+          className="mt-6 border border-hairline-strong px-10 py-4 text-sm uppercase tracking-[0.18em] text-primary transition-colors hover:border-accent-ink hover:text-accent-ink"
         >
           Start
         </button>
-        <p className="mt-5 text-[11px] text-muted">
-          Arrow keys or A / D. Space to start.
+        <p className="mt-5 max-w-sm text-[11px] leading-relaxed text-muted">
+          {mode === "endless" && !challenge
+            ? `Three lives. No round clock - each pair has its own, starting at ${
+                windowMs(0) / 1000
+              } seconds and closing to ${windowMs(99) / 1000} by the fortieth. A wrong answer or a closed window costs a life.`
+            : "Arrow keys or A / D. Space to start."}
         </p>
+        {mode === "endless" && !challenge && unpackRecord(endlessBest).cleared > 0 && (
+          <p className="tabular mt-2 text-[11px] text-muted">
+            furthest {unpackRecord(endlessBest).cleared}
+          </p>
+        )}
       </div>
     );
   }
@@ -275,16 +402,26 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
       <Rail
         assisted={assist}
         code="EQZ"
-        remainingMs={remaining}
-        totalMs={ROUND_MS}
+        remainingMs={endless ? Math.max(0, run.questionEndsAt - now) : remaining}
+        totalMs={endless ? windowMs(run.index) : ROUND_MS}
         penalty={
           run.feedback && !run.feedback.ok
-            ? { id: run.feedback.id, label: "−2s" }
+            ? { id: run.feedback.id, label: endless ? "−1 life" : "−2s" }
             : null
         }
         cells={[
           { label: "Diff", value: `d${String(question?.difficulty ?? 1).padStart(2, "0")}` },
           { label: "Q", value: String(run.index + 1) },
+          ...(endless
+            ? [
+                {
+                  label: "Lives",
+                  value: "●".repeat(run.lives) || "—",
+                  tone: (run.lives <= 1 ? "neg" : "pos") as "neg" | "pos",
+                },
+                { label: "Cleared", value: String(run.cleared) },
+              ]
+            : []),
           { label: "Score", value: run.points.toLocaleString() },
           {
             label: "Streak",
@@ -337,7 +474,11 @@ export function EqualizeGame({ keysEnabled = true }: { keysEnabled?: boolean } =
 
       <Tape
         entries={run.tape}
-        hint="Pick the larger expression. A wrong answer costs two seconds."
+        hint={
+          endless
+            ? "Pick the larger expression. A wrong answer or a closed window costs a life."
+            : "Pick the larger expression. A wrong answer costs two seconds."
+        }
       />
     </div>
   );
