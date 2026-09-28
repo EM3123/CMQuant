@@ -100,6 +100,22 @@ const GAMES = [
     storageKey: "cmquant:pokerminute:best",
     wing: "Poker Lab",
   },
+  {
+    id: "DST",
+    name: "Distribution",
+    skill: "Read the shape, name the statistic",
+    href: "/g/distribution",
+    storageKey: "cmquant:distribution:best",
+    wing: "Comp",
+  },
+  {
+    id: "SIG",
+    name: "Signal",
+    skill: "Find the series that is drifting, not the one with a story",
+    href: "/g/signal",
+    storageKey: "cmquant:signal:best",
+    wing: "Comp",
+  },
 ];
 
 // Counted, never typed. The heading read "Seven games" over a table of

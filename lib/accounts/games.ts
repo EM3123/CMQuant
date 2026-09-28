@@ -16,6 +16,8 @@ export const GAME_IDS = {
   Combinatorics: "combinatorics",
   Equity: "equity",
   "Poker Minute": "poker-minute",
+  Distribution: "distribution",
+  Signal: "signal",
 } as const;
 
 export type GameId = (typeof GAME_IDS)[keyof typeof GAME_IDS];

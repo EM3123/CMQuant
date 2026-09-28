@@ -50,17 +50,17 @@ const DRILLS = [
     id: "DST",
     name: "Distribution",
     skill: "Read a distribution, name its statistics",
-    href: null,
-    storageKey: null,
-    status: "PHASE 2",
+    href: "/g/distribution",
+    storageKey: "cmquant:distribution:best",
+    status: "LIVE",
   },
   {
     id: "SIG",
     name: "Signal",
     skill: "Pattern recognition against controlled noise",
-    href: null,
-    storageKey: null,
-    status: "PHASE 2",
+    href: "/g/signal",
+    storageKey: "cmquant:signal:best",
+    status: "LIVE",
   },
 ];
 

@@ -83,7 +83,8 @@ link would get different questions and the link would be a lie.
 ## Write the test first
 
 Every generator bug this project has shipped was invisible from playing and
-obvious from a distribution. All four were caught by assertions, not by eyes:
+obvious from a distribution. Every one was caught by an assertion, not by
+eyes:
 
 - **Pot Odds** could never put the correct answer in the first or last slot,
   because two of its three distractors are always larger than the answer.
@@ -94,6 +95,24 @@ obvious from a distribution. All four were caught by assertions, not by eyes:
   full-house cards towards it. Technically true to "or better", and nothing a
   player would ever count.
 - **Equalize** paid a full speed bonus for 200ms answers, which is a coin flip.
+- **Distribution** asked for the mean in 0.9% of questions instead of its
+  share, because the whole-number requirement was enforced by rejecting the
+  deal and `sum % n === 0` is a one-in-fifteen coincidence. A question kind
+  that exists and never appears is the same bug as a game missing from the
+  daily rotation.
+- **Signal** planted an upward trend 67% of the time. The decoy that has to
+  finish highest was anchored to the top of the signal, which on a downward
+  trend is its first point, so downward deals kept failing their own
+  guarantee and getting thrown away. The game could have been played by
+  looking for a rise.
+
+And one that is not about correctness at all: **Distribution's mean questions
+all looked the same.** Nudging dots rightwards to make the mean whole always
+took from the rightmost column, which walked half the data into the last one,
+so a tower on the right meant a mean question before you read the prompt. If
+a question kind has a silhouette, measure it - `verify-distribution` compares
+the last-column share across kinds and fails when one drifts ten points from
+the others.
 
 So the order is: generator, then test, then UI. Not the other way around.
 
