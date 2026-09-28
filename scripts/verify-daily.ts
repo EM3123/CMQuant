@@ -56,6 +56,24 @@ for (const g of DAILY_ROTATION) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* The shop window lists everything that exists                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The landing page carries its own list of games, because it shows a skill
+ * line and a personal best that the rotation does not hold. That makes it a
+ * second list of the same catalogue, and second lists rot: Combinatorics and
+ * Equity were live for weeks without appearing on it, so the front page of
+ * the site advertised seven games while ten were playable.
+ */
+const landing = readFileSync(join(process.cwd(), "app", "page.tsx"), "utf8");
+for (const route of routes) {
+  if (!landing.includes(`"${route}"`)) {
+    failures.push(`${route} is playable and is not on the landing page`);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* The rotation's name is the name the game reports                           */
 /* -------------------------------------------------------------------------- */
 

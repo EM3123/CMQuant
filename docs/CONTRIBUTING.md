@@ -214,9 +214,16 @@ own storage key from `endlessKey()`, and a headline of DEPTH rather than
 points - points only break ties between two runs that died on the same
 question.
 
-**Every game has both modes now.** The five on `ChoiceRun` get it from the
-runtime; Equalize, Flash, Memory Tiles and Pot Odds each own their reducer
-and wire it themselves.
+**Every game has both modes except one.** The five on `ChoiceRun` get it
+from the runtime; Equalize, Flash, Memory Tiles and Pot Odds each own their
+reducer and wire it themselves.
+
+**Poker Minute is timed only, and that is a design decision rather than a
+gap.** It withholds the grade until the run is over, and a life you can
+watch disappear is feedback: the count dropping tells you the last decision
+was a leak, which is the one thing that run is built not to tell you. The
+two mechanics contradict each other, so the game keeps the minute in its
+name and nothing else.
 
 If you add another game, the five things to get right are: a separate storage
 key from `endlessKey()`, `endlessScore` rather than the game's own `score`, a

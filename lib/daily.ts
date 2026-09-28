@@ -37,6 +37,11 @@ export const DAILY_ROTATION: DailyGame[] = [
   { name: "Outs", path: "/g/outs", blurb: "Count the cards that save the hand." },
   { name: "Combinatorics", path: "/g/combinatorics", blurb: "Count what the board left behind." },
   { name: "Equity", path: "/g/equity", blurb: "Both hands face up, one card to come." },
+  {
+    name: "Poker Minute",
+    path: "/g/poker-minute",
+    blurb: "Fold or call, graded on the blinds it gave up.",
+  },
 ];
 
 /**

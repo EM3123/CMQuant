@@ -52,6 +52,14 @@ const TABLES = [
     storageKey: "cmquant:equity:best",
     status: "OPEN",
   },
+  {
+    code: "PKM",
+    name: "Poker Minute",
+    line: "Fold or call on the river, graded on the blinds it gave up",
+    href: "/g/poker-minute",
+    storageKey: "cmquant:pokerminute:best",
+    status: "OPEN",
+  },
 ];
 
 export default function PokerPage() {

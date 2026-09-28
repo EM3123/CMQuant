@@ -76,7 +76,37 @@ const GAMES = [
     storageKey: "cmquant:outs:best",
     wing: "Poker Lab",
   },
+  {
+    id: "CMB",
+    name: "Combinatorics",
+    skill: "How many ways a hand can still be dealt",
+    href: "/g/combinatorics",
+    storageKey: "cmquant:combinatorics:best",
+    wing: "Poker Lab",
+  },
+  {
+    id: "EQY",
+    name: "Equity",
+    skill: "Both hands face up, one card to come",
+    href: "/g/equity",
+    storageKey: "cmquant:equity:best",
+    wing: "Poker Lab",
+  },
+  {
+    id: "PKM",
+    name: "Poker Minute",
+    skill: "Fold or call, graded on the blinds it gave up",
+    href: "/g/poker-minute",
+    storageKey: "cmquant:pokerminute:best",
+    wing: "Poker Lab",
+  },
 ];
+
+// Counted, never typed. The heading read "Seven games" over a table of
+// seven while ten were live, because a number written in prose does not
+// change when somebody appends to an array.
+const COMP_COUNT = GAMES.filter((g) => g.wing === "Comp").length;
+const POKER_COUNT = GAMES.length - COMP_COUNT;
 
 export default function Home() {
   return (
@@ -164,11 +194,11 @@ export default function Home() {
       <section id="games" className="border-t border-hairline px-4 py-20">
         <div className="mx-auto w-full max-w-3xl">
           <h2 className="font-display text-3xl font-semibold tracking-tight">
-            Seven games
+            {GAMES.length} games
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
-            Five in Comp for arithmetic and recall. Two in Poker Lab, where the
-            same probability is attached to a decision.
+            {COMP_COUNT} in Comp for arithmetic and recall. {POKER_COUNT} in Poker
+            Lab, where the same probability is attached to a decision.
           </p>
 
           <div className="mt-10 text-xs">
