@@ -142,6 +142,11 @@
 
   /* The right/wrong wash lands on the answer frame, holds, then fades. */
   --dur-flash: 500ms;
+  /* The green is shorter than the red on purpose. A correct answer needs
+     acknowledging and then getting out of the way - you are already reading
+     the next question - whereas a miss is the one thing you need to
+     register before moving on. */
+  --dur-flash-correct: 300ms;
   --dur-ui: 160ms;
   --ease-wing: cubic-bezier(0.2, 0, 0, 1);
 
@@ -393,6 +398,9 @@ body {
 /* Right. A clear terminal green wash, keyed to alpha-positive. */
 @utility flash-correct {
   background: color-mix(in oklab, var(--color-data-pos) 32%, transparent);
+  /* Overrides the duration in the `animation` shorthand on flash-layer,
+     which works because this utility is defined after it. */
+  animation-duration: var(--dur-flash-correct);
 }
 
 /* Wrong. A clear crimson wash, keyed to alpha-negative, and a touch stronger
