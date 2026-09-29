@@ -6,8 +6,11 @@ else. This is the argument for what to do next and in what order.
 
 ## Access
 
-**GitHub.** Edmund adds you as a collaborator on `EM3123/CMQuant`. That is the
-only access you actually need to work.
+**GitHub: you already have it.** This brief originally said Edmund needed to
+add you as a collaborator, which was wrong - you have merged seven pull
+requests into `main` and you push branches straight to the repo, neither of
+which is possible without write access. `git log --merges --pretty='%an  %s'`
+is the receipt. Nothing to do here.
 
 **Vercel: you are not getting an invite, and it does not matter much.** The
 project is on the Hobby plan, which is a single account with no members — the

@@ -5,10 +5,12 @@ the reasoning, this carries the job.
 
 ## Access
 
-Edmund has to do these two. Nothing below works until the first one is done.
+Nothing to arrange. You already have write access to `EM3123/CMQuant` - this
+page used to list it as a blocker and it never was.
 
-1. **Collaborator on `EM3123/CMQuant`.** The repo is private.
-2. **Vercel project invite.** Not needed to start — only to see deploys.
+Vercel is a different matter and is not coming: the project is on the free
+Hobby plan, which has no members. See [`RUNBOOK.md`](RUNBOOK.md) §5 for what
+that costs you in practice.
 
 ## Setup
 

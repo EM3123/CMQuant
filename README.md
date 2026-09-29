@@ -1,12 +1,16 @@
 # CMQuant
 
 **CM stands for Computational Mathematics.** Short, timed, procedurally generated
-games for mental arithmetic, estimation and probability. Eight games are playable;
-the poker wing teaches the same quantitative skills through simulated cards and
-carries no money, wagering or prizes of any kind.
+games for mental arithmetic, estimation and probability. Twelve games are
+playable; the poker wing teaches the same quantitative skills through simulated
+cards and carries no money, wagering or prizes of any kind.
 
 Live at [cm-quant.vercel.app](https://cm-quant.vercel.app). Every push to `main`
 deploys.
+
+**Setting something up, or wondering whose job something is?**
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md) is the operational page: access, the
+Vercel keys, the Supabase checks, and who does what next.
 
 CMQuant is a student-built project and is not affiliated with or endorsed by
 Carnegie Mellon University.
