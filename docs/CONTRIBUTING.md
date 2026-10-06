@@ -100,6 +100,13 @@ eyes:
   deal and `sum % n === 0` is a one-in-fifteen coincidence. A question kind
   that exists and never appears is the same bug as a game missing from the
   daily rotation.
+- **Market Size** put the answer second from the bottom nearly every time.
+  Almost every named error there drops a fraction out of the chain, so the
+  distractors came out larger than the answer: measured at largest 1.9% of the
+  time and smallest 7.3%, which makes "pick one of the middle two" a coin flip.
+  The slot distribution looked perfectly even throughout, because shuffling
+  positions says nothing about ordering - if the options can be sorted, check
+  the rank as well as the slot.
 - **Signal** planted an upward trend 67% of the time. The decoy that has to
   finish highest was anchored to the top of the signal, which on a downward
   trend is its first point, so downward deals kept failing their own
@@ -194,6 +201,31 @@ jitters reads as broken even when it is right.
 
 The wordmark is `components/site/Wordmark.tsx` and nothing else. It was typed
 by hand in sixteen files before that, which is sixteen chances to drift.
+
+## Three wings
+
+`data-wing` on the route root decides what every colour token resolves to.
+There are three, and they are told apart by temperature before anything on
+them is read: **comp** is a blue-black void with silver text, **poker** is a
+flat black room with ash red, and **consult** is a warm near-black ledger
+with bone text and brass.
+
+Consulting is the one wing whose accent and ink can be the same family -
+gold-leaf carries enough contrast on that ground to be read as text, which
+Carnegie Red never did on COMP's. That is why `--accent` and `--accent-ink`
+are a shade apart there rather than two different colours.
+
+**What belongs in Consulting.** Comp asks whether you can do the arithmetic.
+Poker Lab attaches a probability to a decision. Consulting is about
+structure: breaking a question too big to answer into pieces each of which
+is known or guessable, and not losing any of them on the way.
+
+**And the line it does not cross.** The obvious market-sizing game asks what
+the US waste-management market is worth and grades you against a figure off
+a press release. Nothing here can compute that figure, so grading somebody
+against it means asserting a number this repo cannot defend - the same
+reason Poker Minute refuses to print solver outputs. Every case states its
+premises on screen and grades the arithmetic that follows from them.
 
 ## Atmosphere layers
 

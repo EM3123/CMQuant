@@ -64,8 +64,10 @@ const DRILLS = [
   },
 ];
 
+const LIVE_DRILLS = DRILLS.filter((d) => d.href).length;
+
 /**
- * The drill index. Seven games, and nothing above them.
+ * The drill index. The games, and nothing above them.
  *
  * This briefly carried three reference panels - a source viewer, a difficulty
  * plot and a build log - stacked above the games. Every one of them was true
@@ -91,6 +93,10 @@ export default function CompPage() {
             <span className="sm:hidden">Poker</span>
             <span className="max-sm:hidden">Poker Lab</span>
           </Link>
+          <Link href="/consulting" className="transition-colors hover:text-primary">
+            <span className="sm:hidden">Case</span>
+            <span className="max-sm:hidden">Consulting</span>
+          </Link>
           <Link href="/firm" className="transition-colors hover:text-primary">
             <span className="sm:hidden">Firm</span>
             <span className="max-sm:hidden">My Firm</span>
@@ -106,7 +112,9 @@ export default function CompPage() {
               <h1 className="font-display text-2xl font-medium uppercase tracking-wing text-primary">
                 Computational Thinking
               </h1>
-              <Label>5 live / 7 total</Label>
+              <Label>
+                {LIVE_DRILLS} live / {DRILLS.length} total
+              </Label>
             </div>
 
             {/* A grid rather than a table, because every live row has to be a

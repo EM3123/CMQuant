@@ -52,6 +52,14 @@
   --color-deep-red: #cc0000;
   --color-charcoal: #262626;
 
+  /* consulting: a ledger under a desk lamp. Warm near-black rather than
+     the blue void of COMP or the flat black of POKER, so the three wings
+     are told apart by temperature before anything is read. */
+  --color-ledger-black: #0c0b08;
+  --color-ledger-rule: #241f14;
+  --color-bone: #ece6d8;
+  --color-brass: #a8861f;
+
   /* Functional data indicators, identical in both realms on purpose - a
      number that means "up" must not change colour when you walk between
      rooms. High luminance, because they sit on near-black. */
@@ -213,8 +221,41 @@
   --tracking-wing-raw: 0.18em;
 }
 
+/* --- REALM 3: the case room ----------------------------------------------
+   A ledger under a desk lamp. Warm black, rules the colour of old paper
+   grain, bone text and brass for anything live. Gold-leaf carries enough
+   contrast on this ground to be read as text, which Carnegie Red never
+   did in COMP - so unlike the other two wings, the accent and the ink can
+   be the same family.
+   -------------------------------------------------------------------------- */
+[data-wing="consult"] {
+  --surface: var(--color-ledger-black);
+  --surface-raised: #13110b;
+  --surface-sunken: #080705;
+
+  --hairline: var(--color-ledger-rule);
+  --hairline-strong: #41381f;
+
+  --text-primary: var(--color-bone);
+  --text-secondary: #8d8368;
+  --text-muted: #5b5340;
+
+  --accent: var(--color-brass);
+  --accent-ink: var(--color-gold-leaf);
+  --rare: var(--color-gold-leaf);
+
+  --display-family: var(--mono-stack);
+
+  --radius-panel-raw: 0px;
+  --radius-control-raw: 0px;
+  --shadow-panel-raw: none;
+  --shadow-spot-raw: none;
+  --tracking-wing-raw: 0.12em;
+}
+
 @custom-variant wing-comp (&:where([data-wing="comp"], [data-wing="comp"] *));
 @custom-variant wing-poker (&:where([data-wing="poker"], [data-wing="poker"] *));
+@custom-variant wing-consult (&:where([data-wing="consult"], [data-wing="consult"] *));
 
 /* --------------------------------------------------------------------------
    5. Base
@@ -264,6 +305,19 @@ body {
 
 /* COMP: a faint structural grid, the graph paper under a trading blotter.
    Kept under 4% opacity - it should register as texture, never as content. */
+/* Ruled one way only, which is what makes it read as a ledger rather than
+   as another matrix. The lines are far enough apart to sit behind prose
+   without striping it. */
+@utility wing-ledger {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-ledger-rule) 90%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 100% 34px;
+  background-position: left top;
+}
+
 @utility wing-grid {
   background-image: linear-gradient(
       to right,

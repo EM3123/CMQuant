@@ -30,6 +30,10 @@ export default function AccountPage() {
             <span className="sm:hidden">Poker</span>
             <span className="max-sm:hidden">Poker Lab</span>
           </Link>
+          <Link href="/consulting" className="transition-colors hover:text-primary">
+            <span className="sm:hidden">Case</span>
+            <span className="max-sm:hidden">Consulting</span>
+          </Link>
         </div>
       </nav>
 

@@ -48,6 +48,11 @@ export const DAILY_ROTATION: DailyGame[] = [
     blurb: "Read the shape, name the statistic.",
   },
   { name: "Signal", path: "/g/signal", blurb: "Find the one that is drifting." },
+  {
+    name: "Market Size",
+    path: "/g/market-size",
+    blurb: "Multiply the chain out without dropping a line.",
+  },
 ];
 
 /**

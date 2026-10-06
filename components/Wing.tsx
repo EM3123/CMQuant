@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { DragonField } from "@/components/site/DragonField";
 
-export type WingName = "comp" | "poker";
+export type WingName = "comp" | "poker" | "consult";
 
 /**
  * The route root. Everything below it reads its colours, radii, shadows and
@@ -55,6 +55,21 @@ export function Wing({
   // the browser scrolled the root by 124px to keep the vanished element in
   // view, taking the status rail off the top of the screen with it. A clipped
   // box is not a scroll container and cannot be scrolled by anything.
+  // CONSULTING has no extra layer either. Its atmosphere is one ruled
+  // background on the root, horizontal only - a ledger, not a matrix.
+  if (wing === "consult") {
+    return (
+      <div
+        data-wing="consult"
+        className={`wing-ledger relative isolate flex flex-col overflow-clip bg-surface text-primary ${
+          scroll ? "min-h-dvh" : "h-dvh"
+        } ${className}`}
+      >
+        {children}
+      </div>
+    );
+  }
+
   if (wing === "poker") {
     return (
       <div

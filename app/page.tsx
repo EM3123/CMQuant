@@ -116,13 +116,22 @@ const GAMES = [
     storageKey: "cmquant:signal:best",
     wing: "Comp",
   },
+  {
+    id: "MKT",
+    name: "Market Size",
+    skill: "Chain a decomposition without dropping a line",
+    href: "/g/market-size",
+    storageKey: "cmquant:marketsize:best",
+    wing: "Consulting",
+  },
 ];
 
 // Counted, never typed. The heading read "Seven games" over a table of
 // seven while ten were live, because a number written in prose does not
 // change when somebody appends to an array.
 const COMP_COUNT = GAMES.filter((g) => g.wing === "Comp").length;
-const POKER_COUNT = GAMES.length - COMP_COUNT;
+const POKER_COUNT = GAMES.filter((g) => g.wing === "Poker Lab").length;
+const CASE_COUNT = GAMES.filter((g) => g.wing === "Consulting").length;
 
 export default function Home() {
   return (
@@ -142,6 +151,10 @@ export default function Home() {
           <Link href="/poker" className="transition-colors hover:text-primary">
             <span className="sm:hidden">Poker</span>
             <span className="max-sm:hidden">Poker Lab</span>
+          </Link>
+          <Link href="/consulting" className="transition-colors hover:text-primary">
+            <span className="sm:hidden">Case</span>
+            <span className="max-sm:hidden">Consulting</span>
           </Link>
           <Link href="/firm" className="transition-colors hover:text-primary">
             <span className="sm:hidden">Firm</span>
@@ -214,7 +227,9 @@ export default function Home() {
           </h2>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-secondary">
             {COMP_COUNT} in Comp for arithmetic and recall. {POKER_COUNT} in Poker
-            Lab, where the same probability is attached to a decision.
+            Lab, where the same probability is attached to a decision.{" "}
+            {CASE_COUNT} in Consulting, where the question is too big to answer
+            until you break it up.
           </p>
 
           <div className="mt-10 text-xs">
@@ -264,6 +279,12 @@ export default function Home() {
               className="border border-hairline px-7 py-3 text-xs uppercase tracking-[0.18em] text-secondary transition-colors hover:border-rare hover:text-rare"
             >
               Poker Lab
+            </Link>
+            <Link
+              href="/consulting"
+              className="border border-hairline px-7 py-3 text-xs uppercase tracking-[0.18em] text-secondary transition-colors hover:border-rare hover:text-rare"
+            >
+              Consulting
             </Link>
           </div>
         </div>
