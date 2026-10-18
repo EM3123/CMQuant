@@ -53,6 +53,22 @@ const CASES = [
 
 const LIVE = CASES.filter((c) => c.href).length;
 
+/* The labs are free and teach something complete on their own. They sit
+   beside the cases rather than inside them: a case is a timed drill, a lab
+   is a lesson with a prediction, an experiment and an assessment. */
+const LABS = [
+  {
+    href: "/learn/risk-limit",
+    name: "Why does my risk limit miss disasters?",
+    skill: "Gaussian VaR, expected shortfall, and what a backtest cannot see",
+  },
+  {
+    href: "/learn/tail-index",
+    name: "How heavy is the tail, and how sure am I?",
+    skill: "The Hill estimator as a plot across k, not a single number",
+  },
+];
+
 export default function ConsultingPage() {
   return (
     <Wing wing="consult" scroll>
@@ -158,6 +174,25 @@ export default function ConsultingPage() {
             Bests are stored in this browser unless you are signed in.
           </p>
         </div>
+      </div>
+
+      <div className="mx-auto mt-10 w-full max-w-3xl">
+        <div className="flex items-baseline justify-between border-b border-hairline-strong px-3 pb-2">
+          <h2 className="font-display text-xl font-medium uppercase tracking-wing text-primary">
+            Labs
+          </h2>
+          <Label>free</Label>
+        </div>
+        <ul className="divide-y divide-hairline">
+          {LABS.map((lab) => (
+            <li key={lab.href}>
+              <Link href={lab.href} className="group block px-3 py-5 hover:bg-accent/10">
+                <span className="text-primary transition-colors group-hover:text-accent-ink">{lab.name}</span>
+                <span className="mt-0.5 block text-[12px] text-muted">{lab.skill}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <SiteFooter />
