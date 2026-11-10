@@ -1,11 +1,10 @@
 # Headshots
 
-Drop two files here and they appear on the landing page at the next deploy:
+Drop a file here and it appears on the landing page at the next deploy:
 
     public/team/edmund.jpg
-    public/team/cameron.jpg
 
-Until then each person shows a monogram, which is a deliberate design rather
+Until then the card shows a monogram, which is a deliberate design rather
 than a broken image.
 
 The photos are checked on disk at build time in `components/site/Founder.tsx`,

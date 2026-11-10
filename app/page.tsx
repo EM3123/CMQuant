@@ -184,18 +184,12 @@ export default function Home() {
           questions you played and find out who is faster.
         </p>
 
-        <div className="mt-14 flex items-start gap-12 sm:gap-20">
+        <div className="mt-14 flex items-start justify-center">
           <Founder
             name="Edmund Michalski"
             role="Runtime, design system, daily"
             linkedin="https://www.linkedin.com/in/edmund-michalski-72b972411/"
             photo="/team/edmund.jpg"
-          />
-          <Founder
-            name="Cameron Jiang"
-            role="Generators and verification"
-            linkedin="https://www.linkedin.com/in/cameron-jiang-247b60391/"
-            photo="/team/cameron.jpg"
           />
         </div>
 
