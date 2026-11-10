@@ -36,10 +36,18 @@ const CASES = [
   {
     id: "BRK",
     name: "Breakeven",
-    skill: "Fixed cost, contribution, and the volume that clears it",
-    href: null,
-    storageKey: null,
-    status: "PHASE 2",
+    skill: "Fixed costs, contribution, and the volume that clears it",
+    href: "/g/breakeven",
+    storageKey: "cmquant:breakeven:best",
+    status: "LIVE",
+  },
+  {
+    id: "CAP",
+    name: "Cap Rate",
+    skill: "Net operating income, and what a building is worth at a rate",
+    href: "/g/cap-rate",
+    storageKey: "cmquant:caprate:best",
+    status: "LIVE",
   },
   {
     id: "SEG",

@@ -124,6 +124,22 @@ const GAMES = [
     storageKey: "cmquant:marketsize:best",
     wing: "Consulting",
   },
+  {
+    id: "BRK",
+    name: "Breakeven",
+    skill: "Cups a month before the losses stop",
+    href: "/g/breakeven",
+    storageKey: "cmquant:breakeven:best",
+    wing: "Consulting",
+  },
+  {
+    id: "CAP",
+    name: "Cap Rate",
+    skill: "Net operating income over the cap rate",
+    href: "/g/cap-rate",
+    storageKey: "cmquant:caprate:best",
+    wing: "Consulting",
+  },
 ];
 
 // Counted, never typed. The heading read "Seven games" over a table of

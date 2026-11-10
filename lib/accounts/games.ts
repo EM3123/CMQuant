@@ -19,6 +19,8 @@ export const GAME_IDS = {
   Distribution: "distribution",
   Signal: "signal",
   "Market Size": "market-size",
+  Breakeven: "breakeven",
+  "Cap Rate": "cap-rate",
 } as const;
 
 export type GameId = (typeof GAME_IDS)[keyof typeof GAME_IDS];

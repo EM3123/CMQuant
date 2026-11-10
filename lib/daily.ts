@@ -53,6 +53,16 @@ export const DAILY_ROTATION: DailyGame[] = [
     path: "/g/market-size",
     blurb: "Multiply the chain out without dropping a line.",
   },
+  {
+    name: "Breakeven",
+    path: "/g/breakeven",
+    blurb: "Cups a month before the losses stop, rounded up.",
+  },
+  {
+    name: "Cap Rate",
+    path: "/g/cap-rate",
+    blurb: "Net operating income over the cap rate.",
+  },
 ];
 
 /**
